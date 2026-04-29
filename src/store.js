@@ -1,5 +1,31 @@
-// PRIME Philippines — Data Store (localStorage-based)
-const STORE_KEY = 'prime_ims_data';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
+let storeCache = null;
+let initPromise = null;
+
+async function apiFetch(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+function makeId(prefix) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
 
 const EMAIL_TEMPLATES = [
   {
@@ -35,9 +61,7 @@ const COMPANY_DOCUMENTS = [
 ];
 
 const SEED_DATA = {
-  users: [
-    { id: 'hr1', email: 'hr@primeph.com', password: 'admin123', name: 'Maria Santos', role: 'hr' },
-  ],
+  users: [],
   applications: [],
   dtrEntries: [],
   schoolActivities: [],
@@ -57,67 +81,129 @@ const SEED_DATA = {
 };
 
 function generateSeedApplicants() {
-  const now = new Date();
   const apps = [
     {
-      id: 'app1', userId: 'u1', name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Engr. Carlos Reyes', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
+      name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Engr. Carlos Reyes', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
       companyDocs: { doc1: 'signed', doc2: 'signed', doc3: 'submitted', doc4: 'pending', doc5: 'pending' },
-      schoolDocs: [{ id: 'sd1', name: 'Endorsement Letter', status: 'submitted', signedBy: null }],
+      schoolDocs: [{ id: makeId('sd'), name: 'Endorsement Letter', status: 'submitted', signedBy: null }],
     },
-    { id: 'app2', userId: 'u2', name: 'Ana Marie Garcia', email: 'ana@email.com', password: 'pass123', phone: '09181234567', course: 'BS Business Administration', school: 'De La Salle University', ojtType: 'voluntary', hoursRequired: 240, source: 'Facebook', status: 'final_interview', appliedDate: '2026-04-01', quarter: 'Q2-2026', interviewDate: '2026-05-05', interviewTime: '10:00 AM' },
-    { id: 'app3', userId: 'u3', name: 'Mark Anthony Reyes', email: 'mark@email.com', password: 'pass123', phone: '09191234567', course: 'BS Computer Science', school: 'Ateneo de Manila University', ojtType: 'required', hoursRequired: 600, source: 'Referral', status: 'initial_interview', appliedDate: '2026-04-10', quarter: 'Q2-2026', interviewDate: '2026-04-30', interviewTime: '2:00 PM' },
-    { id: 'app4', userId: 'u4', name: 'Sofia Lim', email: 'sofia@email.com', password: 'pass123', phone: '09201234567', course: 'BS Accountancy', school: 'University of Santo Tomas', ojtType: 'required', hoursRequired: 480, source: 'Job Portal', status: 'failed', appliedDate: '2026-03-20', quarter: 'Q1-2026' },
-    { id: 'app5', userId: 'u5', name: 'Carlos Miguel Torres', email: 'carlos@email.com', password: 'pass123', phone: '09211234567', course: 'BS Marketing', school: 'Far Eastern University', ojtType: 'voluntary', hoursRequired: 300, source: 'Company Website', status: 'viewed', appliedDate: '2026-04-20', quarter: 'Q2-2026' },
-    { id: 'app6', userId: 'u6', name: 'Isabella Cruz', email: 'bella@email.com', password: 'pass123', phone: '09221234567', course: 'BS Psychology', school: 'Mapua University', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'submitted', appliedDate: '2026-04-25', quarter: 'Q2-2026' },
+    { name: 'Ana Marie Garcia', email: 'ana@email.com', password: 'pass123', phone: '09181234567', course: 'BS Business Administration', school: 'De La Salle University', ojtType: 'voluntary', hoursRequired: 240, source: 'Facebook', status: 'final_interview', appliedDate: '2026-04-01', quarter: 'Q2-2026', interviewDate: '2026-05-05', interviewTime: '10:00 AM' },
+    { name: 'Mark Anthony Reyes', email: 'mark@email.com', password: 'pass123', phone: '09191234567', course: 'BS Computer Science', school: 'Ateneo de Manila University', ojtType: 'required', hoursRequired: 600, source: 'Referral', status: 'initial_interview', appliedDate: '2026-04-10', quarter: 'Q2-2026', interviewDate: '2026-04-30', interviewTime: '2:00 PM' },
+    { name: 'Sofia Lim', email: 'sofia@email.com', password: 'pass123', phone: '09201234567', course: 'BS Accountancy', school: 'University of Santo Tomas', ojtType: 'required', hoursRequired: 480, source: 'Job Portal', status: 'failed', appliedDate: '2026-03-20', quarter: 'Q1-2026' },
+    { name: 'Carlos Miguel Torres', email: 'carlos@email.com', password: 'pass123', phone: '09211234567', course: 'BS Marketing', school: 'Far Eastern University', ojtType: 'voluntary', hoursRequired: 300, source: 'Company Website', status: 'viewed', appliedDate: '2026-04-20', quarter: 'Q2-2026' },
+    { name: 'Isabella Cruz', email: 'bella@email.com', password: 'pass123', phone: '09221234567', course: 'BS Psychology', school: 'Mapua University', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'submitted', appliedDate: '2026-04-25', quarter: 'Q2-2026' },
   ];
 
-  const users = apps.map(a => ({ id: a.userId, email: a.email, password: a.password, name: a.name, role: a.status === 'accepted' ? 'intern' : 'applicant' }));
+  const users = apps.map(app => ({
+    id: makeId('user'),
+    email: app.email,
+    password: app.password,
+    name: app.name,
+    role: app.status === 'accepted' ? 'intern' : 'applicant',
+  }));
 
-  const dtrEntries = [
-    { id: 'dtr1', appId: 'app1', date: '2026-04-01', timeIn: '08:00', timeOut: '17:30', type: 'work' },
-    { id: 'dtr2', appId: 'app1', date: '2026-04-02', timeIn: '08:00', timeOut: '17:00', type: 'work' },
-    { id: 'dtr3', appId: 'app1', date: '2026-04-03', timeIn: '08:00', timeOut: '18:00', type: 'work' },
-    { id: 'dtr4', appId: 'app1', date: '2026-04-04', timeIn: '08:00', timeOut: '17:00', type: 'work' },
-    { id: 'dtr5', appId: 'app1', date: '2026-04-07', timeIn: '08:30', timeOut: '17:30', type: 'work' },
-  ];
+  const applications = apps.map((app, index) => ({
+    id: makeId('app'),
+    userId: users[index].id,
+    ...app,
+  }));
 
-  const messages = [
-    { id: 'msg1', appId: 'app1', from: 'hr', text: 'Hi Juan! Please submit your Medical Certificate as soon as possible.', time: '2026-04-20 09:00' },
-    { id: 'msg2', appId: 'app1', from: 'intern', text: 'Noted po! Will submit by Friday.', time: '2026-04-20 09:15' },
-  ];
+  const primaryAppId = applications[0]?.id;
 
-  return { users, applications: apps, dtrEntries, messages };
+  const dtrEntries = primaryAppId ? [
+    { id: makeId('dtr'), appId: primaryAppId, date: '2026-04-01', timeIn: '08:00', timeOut: '17:30', type: 'work' },
+    { id: makeId('dtr'), appId: primaryAppId, date: '2026-04-02', timeIn: '08:00', timeOut: '17:00', type: 'work' },
+    { id: makeId('dtr'), appId: primaryAppId, date: '2026-04-03', timeIn: '08:00', timeOut: '18:00', type: 'work' },
+    { id: makeId('dtr'), appId: primaryAppId, date: '2026-04-04', timeIn: '08:00', timeOut: '17:00', type: 'work' },
+    { id: makeId('dtr'), appId: primaryAppId, date: '2026-04-07', timeIn: '08:30', timeOut: '17:30', type: 'work' },
+  ] : [];
+
+  const messages = primaryAppId ? [
+    { id: makeId('msg'), appId: primaryAppId, from: 'hr', text: 'Hi Juan! Please submit your Medical Certificate as soon as possible.', time: '2026-04-20 09:00' },
+    { id: makeId('msg'), appId: primaryAppId, from: 'intern', text: 'Noted po! Will submit by Friday.', time: '2026-04-20 09:15' },
+  ] : [];
+
+  return { users, applications, dtrEntries, messages };
 }
 
-export function getStore() {
-  const raw = localStorage.getItem(STORE_KEY);
-  if (raw) {
-    const data = JSON.parse(raw);
-    // Migration: ensure emailTemplates and deptSlots exist in old storage
-    if (!data.emailTemplates) data.emailTemplates = [...EMAIL_TEMPLATES];
-    if (!data.deptSlots) data.deptSlots = { ...SEED_DATA.deptSlots };
-    return data;
-  }
+function buildSeedStore() {
   const seed = generateSeedApplicants();
-  const data = {
+  const hrUser = { id: makeId('hr'), email: 'hr@primeph.com', password: 'admin123', name: 'Maria Santos', role: 'hr' };
+  return normalizeStore({
     ...SEED_DATA,
-    users: [...SEED_DATA.users, ...seed.users],
+    users: [hrUser, ...seed.users],
     applications: seed.applications,
     dtrEntries: seed.dtrEntries,
     schoolActivities: [],
     messages: seed.messages,
-  };
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
-  return data;
+  });
+}
+
+function normalizeStore(data) {
+  const normalized = data && typeof data === 'object' ? { ...data } : {};
+  normalized.users = Array.isArray(normalized.users) ? normalized.users : [];
+  normalized.applications = Array.isArray(normalized.applications) ? normalized.applications : [];
+  normalized.dtrEntries = Array.isArray(normalized.dtrEntries) ? normalized.dtrEntries : [];
+  normalized.schoolActivities = Array.isArray(normalized.schoolActivities) ? normalized.schoolActivities : [];
+  normalized.messages = Array.isArray(normalized.messages) ? normalized.messages : [];
+  normalized.emailTemplates = Array.isArray(normalized.emailTemplates) ? normalized.emailTemplates : [...EMAIL_TEMPLATES];
+  normalized.deptSlots = normalized.deptSlots && typeof normalized.deptSlots === 'object'
+    ? normalized.deptSlots
+    : { ...SEED_DATA.deptSlots };
+  normalized.quarterSettings = normalized.quarterSettings && typeof normalized.quarterSettings === 'object'
+    ? normalized.quarterSettings
+    : { current: SEED_DATA.quarterSettings.current };
+  return normalized;
+}
+
+async function persistStore() {
+  if (!storeCache) return;
+  try {
+    await apiFetch('/api/store', {
+      method: 'PUT',
+      body: JSON.stringify(storeCache),
+    });
+  } catch (error) {
+    console.warn('Failed to persist store data.', error);
+  }
+}
+
+export async function initStore() {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      const remote = await apiFetch('/api/store');
+      storeCache = normalizeStore(remote);
+      if (!storeCache.users.length && !storeCache.applications.length) {
+        storeCache = buildSeedStore();
+        await persistStore();
+      }
+    } catch (error) {
+      console.warn('Falling back to seed data.', error);
+      storeCache = buildSeedStore();
+    }
+    return storeCache;
+  })();
+  return initPromise;
+}
+
+export function getStore() {
+  if (!storeCache) {
+    storeCache = buildSeedStore();
+  }
+  return storeCache;
 }
 
 export function saveStore(data) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  storeCache = normalizeStore(data);
+  void persistStore();
+  return storeCache;
 }
 
 export function resetStore() {
-  localStorage.removeItem(STORE_KEY);
-  return getStore();
+  storeCache = buildSeedStore();
+  void persistStore();
+  return storeCache;
 }
 
 // Auth helpers
@@ -133,7 +219,7 @@ export function loginUser(email, password, role) {
 export function registerUser({ name, email, password, phone }) {
   const data = getStore();
   if (data.users.find(u => u.email === email)) return { error: 'Email already registered' };
-  const user = { id: 'u' + Date.now(), email, password, name, phone, role: 'applicant' };
+  const user = { id: makeId('user'), email, password, name, phone, role: 'applicant' };
   data.users.push(user);
   saveStore(data);
   return { user };
@@ -145,7 +231,7 @@ export function submitApplication(userId, formData) {
   const now = new Date();
   const q = getQuarter(now);
   const app = {
-    id: 'app' + Date.now(),
+    id: makeId('app'),
     userId,
     ...formData,
     status: 'submitted',
@@ -181,7 +267,7 @@ export function updateAppStatus(appId, status, extra = {}) {
 // DTR helpers
 export function addDtrEntry(appId, entry) {
   const data = getStore();
-  const dtr = { id: 'dtr' + Date.now(), appId, ...entry, type: 'work' };
+  const dtr = { id: makeId('dtr'), appId, ...entry, type: 'work' };
   data.dtrEntries.push(dtr);
   saveStore(data);
   return dtr;
@@ -195,7 +281,7 @@ export function getDtrEntries(appId) {
 export function addSchoolActivity(appId, entry) {
   const data = getStore();
   if (!data.schoolActivities) data.schoolActivities = [];
-  const sa = { id: 'sa' + Date.now(), appId, ...entry, status: 'pending', type: 'school' };
+  const sa = { id: makeId('sa'), appId, ...entry, status: 'pending', type: 'school' };
   data.schoolActivities.push(sa);
   saveStore(data);
   return sa;
@@ -221,7 +307,7 @@ export function getMessages(appId) {
 
 export function sendMessage(appId, from, text) {
   const data = getStore();
-  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString() };
+  const msg = { id: makeId('msg'), appId, from, text, time: new Date().toLocaleString() };
   data.messages.push(msg);
   saveStore(data);
   return msg;
@@ -242,7 +328,7 @@ export function addSchoolDoc(appId, doc) {
   const app = data.applications.find(a => a.id === appId);
   if (!app) return;
   if (!app.schoolDocs) app.schoolDocs = [];
-  app.schoolDocs.push({ id: 'sd' + Date.now(), ...doc, status: 'submitted', signedBy: null });
+  app.schoolDocs.push({ id: makeId('sd'), ...doc, status: 'submitted', signedBy: null });
   saveStore(data);
 }
 
