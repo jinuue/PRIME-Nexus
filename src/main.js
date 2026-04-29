@@ -83,15 +83,17 @@ export function renderNavbar(container, links = []) {
   const initials = user ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2) : '';
 
   nav.innerHTML = `
-    <div class="container">
-      <div class="nav-brand" onclick="location.hash='${user?.role === 'hr' ? '#hr' : '#status'}'">
-        <img src="/logo.png" alt="PRIME Logo" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-        <div class="logo-box" style="display:none;width:32px;height:32px;background:var(--accent-yellow);color:var(--primary);border-radius:6px;align-items:center;justify-content:center;font-weight:800">P</div>
+    <div class="container" style="max-width: 100%; padding: 0 1rem 0 0;">
+      <div class="nav-brand" onclick="location.hash='${user?.role === 'hr' ? '#hr' : '#status'}'" style="height: 64px; margin-left: 0;">
+        <div style="background:#76ABDF; padding: 0 1.5rem; height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 0 24px 24px 0;">
+          <img src="/logo.png" alt="PRIME Logo" class="logo-img" style="height:48px;width:auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+          <div class="logo-box" style="display:none;width:40px;height:40px;background:var(--accent-yellow);color:var(--primary);border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:1.5rem">P</div>
+        </div>
       </div>
-      <div class="nav-links">
+      <div class="nav-links" style="margin-left: 1.5rem">
         ${links.map(l => `<button class="nav-link ${location.hash === l.hash ? 'active' : ''}" onclick="location.hash='${l.hash}'">${l.label}</button>`).join('')}
       </div>
-      <div class="nav-user">
+      <div class="nav-user" style="padding-right: 1rem">
         <div class="avatar">${initials}</div>
         <span>${user?.name || ''}</span>
         <button class="btn-logout" onclick="APP.logout()">Logout</button>

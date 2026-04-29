@@ -31,7 +31,9 @@ export function renderInternDashboard(container) {
   ];
   let tabsHTML = '<div class="tabs">';
   tabs.forEach(t => {
-    tabsHTML += `<button class="tab ${activeTab === t.key ? 'active' : ''}" data-tab="${t.key}">${t.label}</button>`;
+    const isDisabled = !app.isDeployed && (t.key === 'dtr' || t.key === 'hours');
+    tabsHTML += `<button class="tab ${activeTab === t.key ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
+      data-tab="${t.key}" ${isDisabled ? 'disabled title="Available after deployment"' : ''}>${t.label}</button>`;
   });
   tabsHTML += '</div><div id="tab-content"></div>';
   wrap.innerHTML += tabsHTML;
@@ -69,6 +71,27 @@ function renderDeployment(el, app) {
         <div><span class="tag">OJT Type</span><p style="font-weight:600;margin-top:0.25rem">${app.ojtType === 'required' ? 'Required by School' : 'Voluntary'}</p></div>
       </div>
     </div>
+    ${!app.isDeployed ? `
+      <div class="card mt-2" style="border-left: 4px solid var(--accent-yellow)">
+        <div style="display:flex;gap:1rem;align-items:center">
+          <div style="font-size:2rem">⏳</div>
+          <div>
+            <h3 style="color:var(--primary)">Deployment Pending</h3>
+            <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.25rem">Your internship has been accepted, but you are not yet officially deployed to the office. Please coordinate with HR and ensure all your documents are submitted.</p>
+          </div>
+        </div>
+      </div>
+    ` : `
+      <div class="card mt-2" style="border-left: 4px solid var(--success)">
+        <div style="display:flex;gap:1rem;align-items:center">
+          <div style="font-size:2rem">🚀</div>
+          <div>
+            <h3 style="color:var(--success)">Officially Deployed</h3>
+            <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.25rem">You are now officially rendering hours in the office. You can now use the DTR and Hours tracking features.</p>
+          </div>
+        </div>
+      </div>
+    `}
   `;
 }
 
