@@ -1,5 +1,5 @@
 import './style.css';
-import { initStore, getStore, loginUser, registerUser, resetStore, getApplication } from './store.js';
+import { initStore, getStore, loginUser, registerUser, getApplication } from './store.js';
 import { renderLanding } from './pages/landing.js';
 import { renderLogin, renderRegister } from './pages/auth.js';
 import { renderApply } from './pages/apply.js';

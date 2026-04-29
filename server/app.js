@@ -12,6 +12,7 @@ const EXPECTED_TABLES = [
   'school_activities',
   'messages',
   'email_templates',
+  'company_documents',
   'dept_slots',
   'quarter_settings',
 ];
@@ -111,6 +112,9 @@ app.get('/api/store', async (req, res) => {
     const templateTask = tables.has('email_templates')
       ? client.query('SELECT id, name, subject, body FROM email_templates')
       : Promise.resolve({ rows: [] });
+    const companyTask = tables.has('company_documents')
+      ? client.query('SELECT id, name, description, type FROM company_documents')
+      : Promise.resolve({ rows: [] });
     const deptTask = tables.has('dept_slots')
       ? client.query('SELECT department, slots FROM dept_slots')
       : Promise.resolve({ rows: [] });
@@ -126,11 +130,23 @@ app.get('/api/store', async (req, res) => {
       schoolTask,
       msgTask,
       templateTask,
+      companyTask,
       deptTask,
       quarterTask
     );
 
-    const [hrUsersRes, usersRes, appsRes, dtrRes, schoolRes, msgRes, templateRes, deptRes, quarterRes] =
+    const [
+      hrUsersRes,
+      usersRes,
+      appsRes,
+      dtrRes,
+      schoolRes,
+      msgRes,
+      templateRes,
+      companyRes,
+      deptRes,
+      quarterRes,
+    ] =
       await Promise.all(tasks);
 
     const users = [
@@ -187,6 +203,13 @@ app.get('/api/store', async (req, res) => {
       body: row.body,
     }));
 
+    const companyDocuments = companyRes.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      type: row.type,
+    }));
+
     const deptSlots = deptRes.rows.reduce((acc, row) => {
       acc[row.department] = row.slots;
       return acc;
@@ -203,6 +226,7 @@ app.get('/api/store', async (req, res) => {
       schoolActivities,
       messages,
       emailTemplates,
+      companyDocuments,
       deptSlots,
       quarterSettings,
     });
@@ -222,6 +246,7 @@ app.put('/api/store', async (req, res) => {
   const schoolActivities = Array.isArray(payload.schoolActivities) ? payload.schoolActivities : [];
   const messages = Array.isArray(payload.messages) ? payload.messages : [];
   const emailTemplates = Array.isArray(payload.emailTemplates) ? payload.emailTemplates : [];
+  const companyDocuments = Array.isArray(payload.companyDocuments) ? payload.companyDocuments : [];
   const deptSlots = payload.deptSlots && typeof payload.deptSlots === 'object' ? payload.deptSlots : {};
   const quarterSettings = payload.quarterSettings || {};
 
@@ -378,6 +403,22 @@ app.put('/api/store', async (req, res) => {
           templateColumns
         );
         await insertRow(client, 'email_templates', row);
+      }
+    }
+
+    if (tables.has('company_documents')) {
+      const companyColumns = await getColumnSet(client, 'company_documents');
+      for (const doc of companyDocuments) {
+        const row = pickColumns(
+          {
+            id: doc.id,
+            name: doc.name,
+            description: doc.description,
+            type: doc.type,
+          },
+          companyColumns
+        );
+        await insertRow(client, 'company_documents', row);
       }
     }
 
