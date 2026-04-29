@@ -162,9 +162,21 @@ function renderDocuments(el, app) {
 
   function renderChat() {
     let msgsHTML = '';
+    const data = getStore();
+    const hrUser = data.users.find(u => u.role === 'hr'); // Get representative name
+    const hrName = hrUser ? hrUser.name : 'HR Administrator';
+
     messages.forEach(m => {
-      const cls = m.from === 'intern' ? 'sent' : 'received';
-      msgsHTML += `<div class="chat-msg ${cls}"><div>${m.text}</div><div class="msg-time">${m.time}</div></div>`;
+      const isMe = m.from === 'intern';
+      const cls = isMe ? 'sent' : 'received';
+      const senderLabel = isMe ? 'You' : hrName;
+      msgsHTML += `
+        <div class="chat-msg ${cls}">
+          <div style="font-size:0.65rem;font-weight:600;margin-bottom:0.2rem;opacity:0.8">${senderLabel}</div>
+          <div>${m.text}</div>
+          <div class="msg-time">${m.time}</div>
+        </div>
+      `;
     });
     if (!messages.length) msgsHTML = '<div class="empty-state" style="padding:2rem"><p>No messages yet. Start a conversation about your documents.</p></div>';
 
@@ -213,6 +225,9 @@ function renderDTR(el, app) {
 
   const approvedSchoolHours = schoolActivities.filter(s => s.status === 'approved').reduce((sum, s) => sum + (s.hours || 8), 0);
   const cappedSchoolHours = Math.min(approvedSchoolHours, 30);
+  
+  const totalRendered = totalWork + totalOT + cappedSchoolHours;
+  const remaining = Math.max(0, (app.hoursRequired || 0) - totalRendered);
 
   const today = new Date().toISOString().split('T')[0];
   const selectedDate = el.dataset.selectedDate || today;
@@ -221,6 +236,20 @@ function renderDTR(el, app) {
   const isFutureDate = selectedDate > today;
 
   el.innerHTML = `
+    <div class="grid-3 mb-2">
+      <div class="card stat-card">
+        <div class="stat-label">Total Required</div>
+        <div class="stat-value">${app.hoursRequired || 0}h</div>
+      </div>
+      <div class="card stat-card" style="border-left: 4px solid var(--success)">
+        <div class="stat-label">Total Rendered</div>
+        <div class="stat-value">${totalRendered.toFixed(1)}h</div>
+      </div>
+      <div class="card stat-card" style="border-left: 4px solid var(--primary)">
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value">${remaining.toFixed(1)}h</div>
+      </div>
+    </div>
     <div class="card mb-2">
       <div class="card-header flex-between">
         <h3>Daily Time Record</h3>
@@ -362,11 +391,13 @@ function renderHoursTab(el, app) {
   el.innerHTML = `
     <div class="card mb-2">
       <div class="card-header"><h3>📊 Hours Summary</h3></div>
-      <div class="grid-2 mb-2" style="grid-template-columns: repeat(4, 1fr)">
+      <div class="grid-2 mb-2" style="grid-template-columns: repeat(5, 1fr)">
         <div class="stat-card"><div class="stat-number">${formatHours(totalWork)}</div><div class="stat-label">Regular Work</div></div>
+        <div class="stat-number" style="display:none"></div> <!-- spacer -->
         <div class="stat-card"><div class="stat-number">${formatHours(totalOT)}</div><div class="stat-label">Overtime</div></div>
         <div class="stat-card"><div class="stat-number">${formatHours(cappedSchool)}</div><div class="stat-label">School Activities</div></div>
         <div class="stat-card"><div class="stat-number" style="color:var(--primary-light)">${formatHours(totalRendered)}</div><div class="stat-label">Total Rendered</div></div>
+        <div class="stat-card"><div class="stat-number" style="color:var(--accent-red)">${formatHours(remaining)}</div><div class="stat-label">Remaining</div></div>
       </div>
       <div class="progress-wrap">
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>

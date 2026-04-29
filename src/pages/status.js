@@ -13,15 +13,18 @@ const STATUS_STEPS = [
 const STATUS_ORDER = ['submitted', 'viewed', 'initial_interview', 'final_interview', 'final_review', 'accepted', 'failed'];
 
 function getStepState(stepKey, currentStatus) {
+  const STATUS_ORDER = ['submitted', 'viewed', 'initial_interview', 'final_interview', 'final_review', 'accepted', 'failed'];
   const currentIdx = STATUS_ORDER.indexOf(currentStatus);
   const stepIdx = STATUS_ORDER.indexOf(stepKey);
 
+  // Result step logic
   if (stepKey === 'result') {
     if (currentStatus === 'accepted') return 'completed';
     if (currentStatus === 'failed') return 'failed';
-    if (currentIdx >= 5) return 'active';
     return '';
   }
+
+  // Normal steps
   if (stepIdx < currentIdx) return 'completed';
   if (stepIdx === currentIdx) return 'active';
   return '';
@@ -110,7 +113,7 @@ export function renderStatus(container) {
     </div>
   `;
 
-  // Accepted - Congratulations
+  // Final States
   if (app.status === 'accepted') {
     c.innerHTML += `
       <div class="congrats-box mt-3">
@@ -122,10 +125,7 @@ export function renderStatus(container) {
         </button>
       </div>
     `;
-  }
-
-  // Failed - Professional rejection
-  if (app.status === 'failed') {
+  } else if (app.status === 'failed') {
     c.innerHTML += `
       <div class="reject-box mt-3">
         <div class="icon">📄</div>

@@ -320,7 +320,7 @@ function renderApplications(el, apps, data) {
           }
         </td>
         <td>
-          ${isWithdrawn
+          ${isWithdrawn || a.status === 'failed'
             ? `<span style="font-size:0.8rem">${a.department || '—'}</span>`
             : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="department">
                 <option value="">Assign Dept</option>${deptOptions}

@@ -82,8 +82,8 @@ export function renderNavbar(container, links = []) {
   nav.innerHTML = `
     <div class="container">
       <div class="nav-brand" onclick="location.hash='${user?.role === 'hr' ? '#hr' : '#status'}'">
-        <div class="logo-box">P</div>
-        <span>PRIME Philippines</span>
+        <img src="/logo.png" alt="PRIME Logo" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+        <div class="logo-box" style="display:none;width:32px;height:32px;background:var(--accent-yellow);color:var(--primary);border-radius:6px;align-items:center;justify-content:center;font-weight:800">P</div>
       </div>
       <div class="nav-links">
         ${links.map(l => `<button class="nav-link ${location.hash === l.hash ? 'active' : ''}" onclick="location.hash='${l.hash}'">${l.label}</button>`).join('')}

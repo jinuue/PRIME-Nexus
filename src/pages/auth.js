@@ -6,7 +6,8 @@ export function renderLogin(container, mode = 'intern') {
     <div class="auth-page">
       <div class="auth-card">
         <div class="logo-section">
-          <div class="logo-box-lg">P</div>
+          <img src="/logo.png" alt="PRIME Logo" class="logo-img-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="logo-box-lg" style="display:none;width:56px;height:56px;background:var(--primary);color:var(--accent-yellow);border-radius:14px;align-items:center;justify-content:center;font-weight:800;margin:0 auto 1rem">P</div>
           <h1>${isHR ? 'HR Administration' : 'Intern Portal'}</h1>
           <p class="subtitle">${isHR ? 'Authorized HR personnel only' : 'Sign in to your account'}</p>
         </div>
@@ -55,7 +56,8 @@ export function renderRegister(container) {
     <div class="auth-page">
       <div class="auth-card">
         <div class="logo-section">
-          <div class="logo-box-lg">P</div>
+          <img src="/logo.png" alt="PRIME Logo" class="logo-img-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="logo-box-lg" style="display:none;width:56px;height:56px;background:var(--primary);color:var(--accent-yellow);border-radius:14px;align-items:center;justify-content:center;font-weight:800;margin:0 auto 1rem">P</div>
           <h1>Create Account</h1>
           <p class="subtitle">Start your internship application</p>
         </div>

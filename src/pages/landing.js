@@ -1,14 +1,17 @@
 export function renderLanding(container) {
   container.innerHTML = `
     <div class="landing-hero">
-      <div class="logo-big">P</div>
-      <h1>PRIME Philippines</h1>
-      <p>Internship Management System — Apply, track your application status, and manage your internship journey all in one place.</p>
+      <div class="landing-logo-card" style="padding: 2.5rem 5rem; border-radius: 30px">
+        <img src="/logo.png" alt="PRIME Logo" style="height:140px;width:auto;" onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex'">
+      </div>
+      <div class="logo-big" style="display:none;width:100px;height:100px;background:var(--accent-yellow);color:var(--primary);border-radius:24px;align-items:center;justify-content:center;font-weight:800;font-size:3rem;margin:0 auto 2rem">P</div>
+      <h1>Internship Management System</h1>
+      <p>Apply, track your application status, and manage your internship journey all in one place.</p>
       <div class="landing-buttons">
-        <button class="btn btn-yellow btn-lg" onclick="location.hash='#login'" id="btn-intern-portal">
+        <button class="btn btn-yellow" style="padding: 1.25rem 3rem; font-size: 1.25rem; border-radius: 16px" onclick="location.hash='#login'" id="btn-intern-portal">
           📋 Intern Portal
         </button>
-        <button class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3)" onclick="location.hash='#login-hr'" id="btn-hr-portal">
+        <button class="btn btn-landing-secondary" onclick="location.hash='#login-hr'" id="btn-hr-portal">
           🔐 HR Administration
         </button>
       </div>
