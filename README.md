@@ -2,7 +2,7 @@
 
 Draft internship-HR portal for PRIME Philippines developed by IT Interns Batch 2025–2026.
 
-👨‍💻 IT Interns
+## 👨‍💻 IT Interns
 * CJ Trono
 * Aldrin Epino
 * Michael Baynosa
@@ -10,7 +10,7 @@ Draft internship-HR portal for PRIME Philippines developed by IT Interns Batch 2
 * Ericka Raquino
 * Fiona Winslette Dantes
 * Lawrence Afable
-🧑‍💼 HR Intern
+## 🧑‍💼 HR Intern
 * Julie Ann Gonzales
 
 ## ⚠️ Status
