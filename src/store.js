@@ -53,7 +53,8 @@ const SEED_DATA = {
     'Legal': 1,
     'Creative / Design': 3,
     'Admin Support': 4
-  }
+  },
+  legacyInterns: []
 };
 
 function generateSeedApplicants() {
@@ -151,6 +152,7 @@ export function submitApplication(userId, formData) {
     status: 'submitted',
     appliedDate: now.toISOString().split('T')[0],
     quarter: q,
+    isDeployed: false,
     companyDocs: {},
     schoolDocs: [],
   };
@@ -174,6 +176,14 @@ export function updateAppStatus(appId, status, extra = {}) {
     const user = data.users.find(u => u.id === app.userId);
     if (user) user.role = 'intern';
   }
+  saveStore(data);
+  return app;
+}
+
+export function deployIntern(appId) {
+  const data = getStore();
+  const app = data.applications.find(a => a.id === appId);
+  if (app) app.isDeployed = true;
   saveStore(data);
   return app;
 }
@@ -261,6 +271,15 @@ export function getQuarter(date) {
   const m = d.getMonth();
   const q = m < 3 ? 'Q1' : m < 6 ? 'Q2' : m < 9 ? 'Q3' : 'Q4';
   return `${q}-${d.getFullYear()}`;
+}
+
+export function addLegacyIntern(data) {
+  const store = getStore();
+  if (!store.legacyInterns) store.legacyInterns = [];
+  const entry = { id: 'leg' + Date.now(), ...data, addedAt: new Date().toISOString() };
+  store.legacyInterns.push(entry);
+  saveStore(store);
+  return entry;
 }
 
 export function computeHours(timeIn, timeOut) {

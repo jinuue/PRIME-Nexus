@@ -1,4 +1,4 @@
-import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS, getQuarter } from '../store.js';
+import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS, getQuarter, deployIntern, addLegacyIntern } from '../store.js';
 import { renderNavbar } from '../main.js';
 
 let hrSection = 'applications';
@@ -25,6 +25,7 @@ export function renderHRDashboard(container) {
     { key: 'email', icon: '✉️', label: 'Email Templates' },
     { key: 'messages', icon: '💬', label: 'Communications' },
     { key: 'dtr', icon: '⏱️', label: 'DTR Access' },
+    { key: 'historical', icon: '📂', label: 'Historical Records' },
     { key: 'analytics', icon: '📊', label: 'Analytics' },
   ];
   sidebar.innerHTML = `<div class="hr-sidebar-section">Management</div>` +
@@ -40,8 +41,8 @@ export function renderHRDashboard(container) {
 
   // Sidebar clicks
   sidebar.querySelectorAll('.hr-sidebar-link').forEach(btn => {
-    btn.onclick = () => { 
-      hrSection = btn.dataset.section; 
+    btn.onclick = () => {
+      hrSection = btn.dataset.section;
       renderHRContent(content);
       // Update sidebar active state
       sidebar.querySelectorAll('.hr-sidebar-link').forEach(b => b.classList.toggle('active', b.dataset.section === hrSection));
@@ -64,6 +65,7 @@ function renderHRContent(content) {
     case 'email': renderEmailTemplates(content, apps); break;
     case 'messages': renderMessages(content, apps); break;
     case 'dtr': renderDTRAccess(content, apps); break;
+    case 'historical': renderHistoricalData(content); break;
     case 'analytics': renderAnalytics(content, apps); break;
   }
 }
@@ -84,7 +86,7 @@ function renderDocTracking(el, apps) {
   selectDiv.className = 'form-group';
   selectDiv.innerHTML = `
     <label>Select Intern to View Progress</label>
-    <select class="form-control" id="doc-intern-select"><option value="">-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department||'Unassigned'}</option>`).join('')}</select>
+    <select class="form-control" id="doc-intern-select"><option value="">-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}</select>
   `;
   el.appendChild(selectDiv);
 
@@ -96,7 +98,7 @@ function renderDocTracking(el, apps) {
     const data = getStore();
     const app = (data.applications || []).find(i => i.id === appId);
     if (!app) { docView.innerHTML = ''; return; }
-    
+
     const companyDocs = app.companyDocs || {};
     const schoolDocs = app.schoolDocs || [];
 
@@ -117,9 +119,9 @@ function renderDocTracking(el, apps) {
             <div style="font-size:0.75rem;color:var(--text-secondary)">Status: <span class="badge ${badgeCls}">${status.toUpperCase()}</span></div>
           </div>
           <select class="form-control doc-status-select" style="width:110px;font-size:0.7rem;padding:0.2rem" data-appid="${appId}" data-docid="${doc.id}">
-            <option value="pending" ${status==='pending'?'selected':''}>Pending</option>
-            <option value="submitted" ${status==='submitted'?'selected':''}>Submitted</option>
-            <option value="signed" ${status==='signed'?'selected':''}>Signed</option>
+            <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
+            <option value="submitted" ${status === 'submitted' ? 'selected' : ''}>Submitted</option>
+            <option value="signed" ${status === 'signed' ? 'selected' : ''}>Signed</option>
           </select>
         </div>
       `;
@@ -214,7 +216,7 @@ let hrAppTab = 'submitted';
 
 function renderApplications(el, apps, data) {
   el.innerHTML = '<h2 class="mb-2">📋 Application Management</h2>';
-  
+
   // Slots Summary (Editable)
   const slotsDiv = document.createElement('div');
   slotsDiv.className = 'card mb-2';
@@ -229,7 +231,7 @@ function renderApplications(el, apps, data) {
     </div>
     <div class="grid-2" style="grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
   `;
-  
+
   DEPARTMENTS.forEach(dept => {
     const hired = apps.filter(a => a.status === 'accepted' && a.department === dept).length;
     const total = data.deptSlots?.[dept] || 0;
@@ -264,7 +266,7 @@ function renderApplications(el, apps, data) {
   renderFilterBar(filterDiv, apps);
 
   // Status Tabs Navigation
-  const statuses = ['submitted','viewed','initial_interview','final_interview','final_review','accepted','failed','withdrawn'];
+  const statuses = ['submitted', 'viewed', 'initial_interview', 'final_interview', 'final_review', 'accepted', 'failed', 'withdrawn'];
   const tabsWrap = document.createElement('div');
   tabsWrap.className = 'tabs mb-2';
   statuses.forEach(st => {
@@ -293,7 +295,7 @@ function renderApplications(el, apps, data) {
     const tableDiv = document.createElement('div');
     tableDiv.className = 'table-wrap';
     let rows = list.map(a => {
-      const statusOptions = ['submitted','viewed','initial_interview','final_interview','final_review','accepted','failed'].map(s =>
+      const statusOptions = ['submitted', 'viewed', 'initial_interview', 'final_interview', 'final_review', 'accepted', 'failed'].map(s =>
         `<option value="${s}" ${a.status === s ? 'selected' : ''}>${formatSt(s)}</option>`
       ).join('');
 
@@ -314,23 +316,27 @@ function renderApplications(el, apps, data) {
         </td>
         <td><span style="font-size:0.8rem">${a.appliedDate}<br>${a.quarter || ''}</span></td>
         <td>
-          ${isWithdrawn 
-            ? `<span class="badge badge-red">${formatSt('withdrawn')}</span>`
-            : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="status">${statusOptions}</select>`
-          }
+          ${isWithdrawn
+          ? `<span class="badge badge-red">${formatSt('withdrawn')}</span>`
+          : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="status">${statusOptions}</select>`
+        }
         </td>
         <td>
           ${isWithdrawn || a.status === 'failed'
-            ? `<span style="font-size:0.8rem">${a.department || '—'}</span>`
-            : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="department">
+          ? `<span style="font-size:0.8rem">${a.department || '—'}</span>`
+          : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="department">
                 <option value="">Assign Dept</option>${deptOptions}
               </select>`
-          }
+        }
         </td>
         <td>
-          ${!isWithdrawn && ['initial_interview','final_interview'].includes(a.status) ? `
-            <input type="date" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem;margin-bottom:0.25rem" data-appid="${a.id}" data-field="interviewDate" value="${a.status === 'final_interview' ? (a.finalInterviewDate||'') : (a.interviewDate||'')}" />
-            <input type="time" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewTime" value="${a.status === 'final_interview' ? (a.finalInterviewTime||'') : (a.interviewTime||'')}" />
+          ${!isWithdrawn && ['initial_interview', 'final_interview'].includes(a.status) ? `
+            <input type="date" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem;margin-bottom:0.25rem" data-appid="${a.id}" data-field="interviewDate" value="${a.status === 'final_interview' ? (a.finalInterviewDate || '') : (a.interviewDate || '')}" />
+            <input type="time" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewTime" value="${a.status === 'final_interview' ? (a.finalInterviewTime || '') : (a.interviewTime || '')}" />
+          ` : a.status === 'accepted' ? `
+            ${a.isDeployed
+            ? '<span class="badge badge-green">🚀 DEPLOYED</span>'
+            : `<button class="btn btn-success btn-sm btn-deploy" data-appid="${a.id}">🚀 Deploy to Office</button>`}
           ` : '<span style="font-size:0.78rem;color:var(--text-secondary)">—</span>'}
         </td>
       </tr>`;
@@ -398,6 +404,23 @@ function attachAppListeners(container, data) {
       }
     };
   });
+
+  container.querySelectorAll('.btn-deploy').forEach(btn => {
+    btn.onclick = () => {
+      const store = getStore();
+      const app = store.applications.find(a => a.id === btn.dataset.appid);
+      if (app) {
+        if (!app.department) {
+          alert('Please assign a department first before deployment.');
+          return;
+        }
+        if (confirm(`Deploy ${app.name} to the office? This will enable their DTR and hours tracking.`)) {
+          deployIntern(app.id);
+          renderHRContent(document.querySelector('.hr-content'));
+        }
+      }
+    };
+  });
 }
 
 function renderMasterlist(el, apps, type) {
@@ -410,9 +433,9 @@ function renderMasterlist(el, apps, type) {
 
   let filtered = filterApps(apps).sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
   if (isInterns) {
-    filtered = filtered.filter(a => a.status === 'accepted');
+    filtered = filtered.filter(a => a.status === 'accepted' && a.isDeployed);
   } else {
-    filtered = filtered.filter(a => a.status !== 'accepted');
+    filtered = filtered.filter(a => a.status !== 'accepted' || (a.status === 'accepted' && !a.isDeployed));
   }
 
   if (!filtered.length) {
@@ -434,9 +457,9 @@ function renderMasterlist(el, apps, type) {
       const dtrs = getDtrEntries(a.id);
       let total = 0;
       dtrs.forEach(d => { const h = computeHours(d.timeIn, d.timeOut); total += h.total; });
-      return `<tr><td><strong>${a.name}</strong></td><td>${a.school||'N/A'}</td><td>${a.course||'N/A'}</td><td>${a.department||'N/A'}</td><td>${a.supervisor||'N/A'}</td><td>${formatHours(total)} / ${a.hoursRequired||'N/A'}</td><td><span class="badge ${a.ojtType==='required'?'badge-blue':'badge-yellow'}">${a.ojtType==='required'?'Required':'Voluntary'}</span></td></tr>`;
+      return `<tr><td><strong>${a.name}</strong></td><td>${a.school || 'N/A'}</td><td>${a.course || 'N/A'}</td><td>${a.department || 'N/A'}</td><td>${a.supervisor || 'N/A'}</td><td>${formatHours(total)} / ${a.hoursRequired || 'N/A'}</td><td><span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span></td></tr>`;
     } else {
-      return `<tr><td><strong>${a.name}</strong></td><td>${a.email}</td><td>${a.phone||'N/A'}</td><td>${a.school||'N/A'}</td><td>${a.course||'N/A'}</td><td><span class="badge ${getBadgeCls(a.status)}">${formatSt(a.status)}</span></td><td><span class="badge ${a.ojtType==='required'?'badge-blue':'badge-yellow'}">${a.ojtType==='required'?'Required':'Voluntary'}</span></td></tr>`;
+      return `<tr><td><strong>${a.name}</strong></td><td>${a.email}</td><td>${a.phone || 'N/A'}</td><td>${a.school || 'N/A'}</td><td>${a.course || 'N/A'}</td><td><span class="badge ${getBadgeCls(a.status)}">${formatSt(a.status)}</span></td><td><span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span></td></tr>`;
     }
   }).join('');
 
@@ -449,8 +472,8 @@ function renderMasterlist(el, apps, type) {
   countDiv.style.gap = '0.75rem';
   countDiv.innerHTML = `
     <div class="stat-card" style="flex:1"><div class="stat-number">${filtered.length}</div><div class="stat-label">Total</div></div>
-    <div class="stat-card" style="flex:1"><div class="stat-number">${filtered.filter(a=>a.ojtType==='required').length}</div><div class="stat-label">Required</div></div>
-    <div class="stat-card" style="flex:1"><div class="stat-number">${filtered.filter(a=>a.ojtType==='voluntary').length}</div><div class="stat-label">Voluntary</div></div>
+    <div class="stat-card" style="flex:1"><div class="stat-number">${filtered.filter(a => a.ojtType === 'required').length}</div><div class="stat-label">Required</div></div>
+    <div class="stat-card" style="flex:1"><div class="stat-number">${filtered.filter(a => a.ojtType === 'voluntary').length}</div><div class="stat-label">Voluntary</div></div>
   `;
   el.appendChild(countDiv);
 }
@@ -483,7 +506,7 @@ function renderEmailTemplates(el, apps) {
 
   function renderEditor() {
     if (!selectedTemplate) return;
-    
+
     editorArea.innerHTML = `
       <div class="card mb-2">
         <div class="flex-between mb-1">
@@ -527,7 +550,7 @@ function renderEmailTemplates(el, apps) {
       const btn = document.getElementById('btn-send-email');
       const subject = document.getElementById('edit-template-subject').value;
       const bodyText = document.getElementById('edit-template-body').value;
-      
+
       if (app) {
         let body = bodyText
           .replace(/\{name\}/g, app.name)
@@ -657,7 +680,7 @@ function renderDTRAccess(el, apps) {
   selectDiv.className = 'form-group';
   selectDiv.innerHTML = `
     <label>Select Intern</label>
-    <select class="form-control" id="dtr-intern-select"><option value="">-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department||'Unassigned'}</option>`).join('')}</select>
+    <select class="form-control" id="dtr-intern-select"><option value="">-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}</select>
   `;
   el.appendChild(selectDiv);
 
@@ -674,14 +697,14 @@ function renderDTRAccess(el, apps) {
 
     let totalWork = 0, totalOT = 0;
     dtrs.forEach(d => { const h = computeHours(d.timeIn, d.timeOut); totalWork += h.regular; totalOT += h.overtime; });
-    const approvedSchool = schoolActs.filter(s => s.status === 'approved').reduce((s, a) => s + (a.hours||8), 0);
+    const approvedSchool = schoolActs.filter(s => s.status === 'approved').reduce((s, a) => s + (a.hours || 8), 0);
 
     let html = `
       <div class="flex mt-2 mb-2" style="gap:0.75rem">
         <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork)}</div><div class="stat-label">Regular</div></div>
         <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalOT)}</div><div class="stat-label">Overtime</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(Math.min(approvedSchool,30))}</div><div class="stat-label">School</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork+totalOT+Math.min(approvedSchool,30))}</div><div class="stat-label">Total</div></div>
+        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(Math.min(approvedSchool, 30))}</div><div class="stat-label">School</div></div>
+        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork + totalOT + Math.min(approvedSchool, 30))}</div><div class="stat-label">Total</div></div>
       </div>
     `;
 
@@ -702,7 +725,7 @@ function renderDTRAccess(el, apps) {
         const actions = s.status === 'pending'
           ? `<button class="btn btn-success btn-sm" data-said="${s.id}" data-action="approve">Approve</button> <button class="btn btn-danger btn-sm" data-said="${s.id}" data-action="reject">Reject</button>`
           : '—';
-        const proofBtn = s.proofName 
+        const proofBtn = s.proofName
           ? `<button class="btn btn-secondary btn-sm" style="padding:0 0.4rem;font-size:0.7rem" onclick="alert('Viewing Proof: ${s.proofName}')">📄 View</button>`
           : '—';
         html += `<tr><td>${s.date}</td><td>${s.activity}</td><td>${proofBtn}</td><td><span class="badge ${bc}">${bt}</span></td><td>${actions}</td></tr>`;
@@ -752,7 +775,7 @@ function renderAnalytics(el, apps) {
     h3.className = 'mb-1 mt-3';
     h3.textContent = 'Per Quarter';
     el.appendChild(h3);
-    
+
     const tDiv = document.createElement('div');
     tDiv.className = 'table-wrap mb-2';
     let rows = quarters.map(q => {
@@ -762,9 +785,9 @@ function renderAnalytics(el, apps) {
       return `<tr>
         <td><strong>${q}</strong></td>
         <td>${qApps.length}</td>
-        <td>${qApps.filter(a=>a.ojtType==='required').length}</td>
-        <td>${qApps.filter(a=>a.ojtType==='voluntary').length}</td>
-        <td>${qApps.filter(a=>a.status==='accepted').length}</td>
+        <td>${qApps.filter(a => a.ojtType === 'required').length}</td>
+        <td>${qApps.filter(a => a.ojtType === 'voluntary').length}</td>
+        <td>${qApps.filter(a => a.status === 'accepted').length}</td>
         <td style="width:200px"><div style="background:var(--surface2);border-radius:4px;overflow:hidden;height:20px"><div style="background:linear-gradient(90deg,var(--primary),var(--primary-light));height:100%;width:${barWidth}%;border-radius:4px"></div></div></td>
       </tr>`;
     }).join('');
@@ -774,19 +797,19 @@ function renderAnalytics(el, apps) {
 
   // Per department
   const deptCounts = {};
-  apps.forEach(a => { const d = a.department || 'Unassigned'; deptCounts[d] = (deptCounts[d]||0) + 1; });
-  const deptEntries = Object.entries(deptCounts).sort((a,b) => b[1]-a[1]);
+  apps.forEach(a => { const d = a.department || 'Unassigned'; deptCounts[d] = (deptCounts[d] || 0) + 1; });
+  const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
   if (deptEntries.length) {
     const h3 = document.createElement('h3');
     h3.className = 'mb-1 mt-3';
     h3.textContent = 'Per Department';
     el.appendChild(h3);
-    
+
     const dDiv = document.createElement('div');
     dDiv.className = 'table-wrap';
-    const maxDept = Math.max(...deptEntries.map(e=>e[1]));
+    const maxDept = Math.max(...deptEntries.map(e => e[1]));
     let dRows = deptEntries.map(([dept, count]) => {
-      const bw = (count/maxDept)*100;
+      const bw = (count / maxDept) * 100;
       return `<tr><td><strong>${dept}</strong></td><td>${count}</td><td style="width:200px"><div style="background:var(--surface2);border-radius:4px;overflow:hidden;height:20px"><div style="background:linear-gradient(90deg,var(--primary-light),var(--primary));height:100%;width:${bw}%;border-radius:4px"></div></div></td></tr>`;
     }).join('');
     dDiv.innerHTML = `<table><thead><tr><th>Department</th><th>Count</th><th>Distribution</th></tr></thead><tbody>${dRows}</tbody></table>`;
@@ -794,11 +817,139 @@ function renderAnalytics(el, apps) {
   }
 }
 
+function renderHistoricalData(el) {
+  const store = getStore();
+  const legacy = store.legacyInterns || [];
+
+  el.innerHTML = `
+    <h2 class="mb-2">📂 Historical Records</h2>
+    <div class="card mb-2">
+      <h3 class="mb-1">Import Old Intern Information</h3>
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">Manually add records for past interns. Please include their contact details and original documents.</p>
+      
+      <form id="legacy-form" class="grid-2" style="gap:1rem">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" class="form-control" placeholder="Intern Name" required />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="email@example.com" required />
+        </div>
+        <div class="form-group">
+          <label>Contact Number</label>
+          <input type="text" name="phone" class="form-control" placeholder="09XX XXX XXXX" required />
+        </div>
+        <div class="form-group">
+          <label>School / University</label>
+          <input type="text" name="school" class="form-control" placeholder="University Name" required />
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select name="department" class="form-control" required>
+            <option value="">Select Dept</option>
+            ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Internship Period (e.g. Feb - May 2024)</label>
+          <input type="text" name="period" class="form-control" placeholder="e.g. Q1 2024" required />
+        </div>
+        <div class="form-group">
+          <label>Total Hours Rendered</label>
+          <input type="number" name="hours" class="form-control" placeholder="e.g. 480" required />
+        </div>
+        <div class="form-group">
+          <label>DTR Excel File</label>
+          <input type="file" name="dtrFile" class="form-control" accept=".xlsx,.xls,.csv" style="padding:0.4rem" required />
+        </div>
+        <div class="form-group">
+          <label>Resume / CV</label>
+          <input type="file" name="resume" class="form-control" accept=".pdf,.doc,.docx" style="padding:0.4rem" required />
+        </div>
+        <div class="form-group">
+          <label>Cover Letter / Portfolio (Optional)</label>
+          <input type="file" name="portfolio" class="form-control" accept=".pdf,.doc,.docx" style="padding:0.4rem" />
+        </div>
+        <div style="grid-column: span 2; text-align: right; margin-top:0.5rem">
+          <button type="submit" class="btn btn-primary">➕ Add to Archive</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3 class="mb-1">Archived Interns List</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Intern Details</th>
+              <th>Academic & Dept</th>
+              <th>Period & Hours</th>
+              <th>Documents</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${legacy.length > 0 ? legacy.map(l => `
+              <tr>
+                <td>
+                  <strong>${l.name}</strong><br>
+                  <span style="font-size:0.75rem;color:var(--text-secondary)">${l.email}</span><br>
+                  <span style="font-size:0.75rem;color:var(--text-secondary)">${l.phone}</span>
+                </td>
+                <td>
+                  <span style="font-size:0.8rem">${l.school}</span><br>
+                  <span class="badge badge-blue" style="margin-top:0.25rem">${l.department}</span>
+                </td>
+                <td>
+                  <span style="font-size:0.8rem">${l.period}</span><br>
+                  <strong>${l.hours}h rendered</strong>
+                </td>
+                <td>
+                  <div class="flex" style="gap:0.35rem;flex-wrap:wrap">
+                    <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing DTR: ${l.dtrFileName}')">📊 DTR</button>
+                    <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Resume: ${l.resumeFileName}')">📄 Resume</button>
+                    ${l.portfolioFileName ? `<button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Portfolio: ${l.portfolioFileName}')">🎨 Portfolio</button>` : ''}
+                  </div>
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary)">No historical records found.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('legacy-form').onsubmit = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const dtrFile = e.target.querySelector('[name=dtrFile]').files[0];
+    const resumeFile = e.target.querySelector('[name=resume]').files[0];
+    const portfolioFile = e.target.querySelector('[name=portfolio]').files[0];
+    
+    addLegacyIntern({
+      name: fd.get('name'),
+      email: fd.get('email'),
+      phone: fd.get('phone'),
+      school: fd.get('school'),
+      department: fd.get('department'),
+      hours: fd.get('hours'),
+      period: fd.get('period'),
+      dtrFileName: dtrFile ? dtrFile.name : null,
+      resumeFileName: resumeFile ? resumeFile.name : null,
+      portfolioFileName: portfolioFile ? portfolioFile.name : null
+    });
+
+    renderHistoricalData(el);
+    alert('Legacy record archived successfully!');
+  };
+}
+
 function formatSt(s) {
-  const m = { submitted:'Submitted', viewed:'Viewed', initial_interview:'Initial Interview', final_interview:'Final Interview', final_review:'Final Review', accepted:'Accepted', failed:'Not Selected', withdrawn:'Withdrawn' };
-  return m[s]||s;
+  const m = { submitted: 'Submitted', viewed: 'Viewed', initial_interview: 'Initial Interview', final_interview: 'Final Interview', final_review: 'Final Review', accepted: 'Accepted', failed: 'Not Selected', withdrawn: 'Withdrawn' };
+  return m[s] || s;
 }
 function getBadgeCls(s) {
-  const m = { submitted:'badge-blue', viewed:'badge-yellow', initial_interview:'badge-orange', final_interview:'badge-orange', final_review:'badge-blue', accepted:'badge-green', failed:'badge-red', withdrawn:'badge-gray' };
-  return m[s]||'badge-gray';
+  const m = { submitted: 'badge-blue', viewed: 'badge-yellow', initial_interview: 'badge-orange', final_interview: 'badge-orange', final_review: 'badge-blue', accepted: 'badge-green', failed: 'badge-red', withdrawn: 'badge-gray' };
+  return m[s] || 'badge-gray';
 }
