@@ -159,6 +159,22 @@ export function renderStatus(container) {
         <div class="modal">
           <h2>Withdraw Application?</h2>
           <p>Are you sure you want to withdraw your internship application? This action cannot be undone and will be reflected on the HR side.</p>
+          <div class="form-group mt-1 text-left">
+            <label>Reason for Withdrawal</label>
+            <select id="withdraw-reason" class="form-control">
+              <option value="">-- Select Reason --</option>
+              <option value="Accepted another offer">Accepted another offer</option>
+              <option value="Schedule conflict">Schedule conflict</option>
+              <option value="Personal reasons">Personal reasons</option>
+              <option value="Health reasons">Health reasons</option>
+              <option value="Proximity/Location issues">Proximity/Location issues</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group text-left" id="group-withdraw-other" style="display:none; margin-top:-0.5rem">
+            <label>Please specify</label>
+            <input type="text" id="withdraw-reason-other" class="form-control" placeholder="Enter reason" />
+          </div>
           <div class="modal-actions">
             <button class="btn btn-secondary" id="btn-cancel-withdraw">Cancel</button>
             <button class="btn btn-danger" id="btn-confirm-withdraw">Yes, Withdraw</button>
@@ -167,9 +183,21 @@ export function renderStatus(container) {
       `;
       document.body.appendChild(overlay);
 
+      const reasonSelect = document.getElementById('withdraw-reason');
+      const otherGroup = document.getElementById('group-withdraw-other');
+      reasonSelect.onchange = () => {
+        otherGroup.style.display = reasonSelect.value === 'Other' ? 'block' : 'none';
+      };
+
       document.getElementById('btn-cancel-withdraw').onclick = () => overlay.remove();
       document.getElementById('btn-confirm-withdraw').onclick = () => {
-        updateAppStatus(app.id, 'withdrawn');
+        let reason = reasonSelect.value;
+        if (!reason) { alert('Please select a reason for withdrawal.'); return; }
+        if (reason === 'Other') {
+          reason = document.getElementById('withdraw-reason-other').value;
+          if (!reason) { alert('Please specify your reason.'); return; }
+        }
+        updateAppStatus(app.id, 'withdrawn', { withdrawReason: reason });
         overlay.remove();
         window.APP.render();
       };

@@ -79,6 +79,16 @@ export function renderNavbar(container, links = []) {
   nav.className = 'navbar';
   const initials = user ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2) : '';
 
+  let unreadCount = 0;
+  if (user && (user.role === 'intern' || user.role === 'applicant')) {
+    const data = getStore();
+    const app = (data.applications || []).find(a => a.userId === user.id);
+    if (app && app.status === 'accepted') {
+      const msgs = (data.messages || []).filter(m => m.appId === app.id);
+      unreadCount = msgs.filter(m => m.from === 'hr' && !m.read).length;
+    }
+  }
+
   nav.innerHTML = `
     <div class="container" style="max-width: 100%; padding: 0 1rem 0 0;">
       <div class="nav-brand" onclick="location.hash='${user?.role === 'hr' ? '#hr' : '#status'}'" style="height: 64px; margin-left: 0;">
@@ -86,9 +96,18 @@ export function renderNavbar(container, links = []) {
           <img src="/logo.png" alt="PRIME Logo" class="logo-img" style="height:48px;width:auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
           <div class="logo-box" style="display:none;width:40px;height:40px;background:var(--accent-yellow);color:var(--primary);border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:1.5rem">P</div>
         </div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; color: #fff; margin-left: 0.5rem; letter-spacing: 0.5px;">
+          Internship Management System
+        </div>
       </div>
       <div class="nav-links" style="margin-left: 1.5rem">
-        ${links.map(l => `<button class="nav-link ${location.hash === l.hash ? 'active' : ''}" onclick="location.hash='${l.hash}'">${l.label}</button>`).join('')}
+        ${links.map(l => {
+          let badge = '';
+          if (unreadCount > 0 && l.label === 'Dashboard') {
+            badge = `<span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.35rem;font-size:0.65rem;margin-left:6px;vertical-align:middle">${unreadCount}</span>`;
+          }
+          return `<button class="nav-link ${location.hash === l.hash ? 'active' : ''}" style="display:flex;align-items:center" onclick="location.hash='${l.hash}'"><span>${l.label}</span> ${badge}</button>`;
+        }).join('')}
       </div>
       <div class="nav-user" style="padding-right: 1rem">
         <div class="avatar">${initials}</div>
@@ -98,4 +117,26 @@ export function renderNavbar(container, links = []) {
     </div>
   `;
   container.appendChild(nav);
+}
+
+// Global UI Utilities
+export function setupPhoneMask(input) {
+  if (!input) return;
+  input.maxLength = 13; // 09XX XXX XXXX is 13 chars including spaces
+  input.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    let formatted = '';
+    if (value.length > 0) {
+      formatted = value.substring(0, 4);
+      if (value.length > 4) {
+        formatted += ' ' + value.substring(4, 7);
+      }
+      if (value.length > 7) {
+        formatted += ' ' + value.substring(7, 11);
+      }
+    }
+    e.target.value = formatted;
+  });
 }

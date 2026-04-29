@@ -1,4 +1,4 @@
-import { getApplication, getDtrEntries, addDtrEntry, getSchoolActivities, addSchoolActivity, getMessages, sendMessage, computeHours, formatHours, COMPANY_DOCUMENTS, updateDocStatus, addSchoolDoc, getStore } from '../store.js';
+import { getApplication, getDtrEntries, addDtrEntry, getSchoolActivities, addSchoolActivity, getMessages, sendMessage, computeHours, formatHours, COMPANY_DOCUMENTS, updateDocStatus, addSchoolDoc, getStore, updateAppStatus, markMessagesAsRead } from '../store.js';
 import { renderNavbar } from '../main.js';
 
 let activeTab = 'deployment';
@@ -8,6 +8,10 @@ export function renderInternDashboard(container) {
   if (!user) { location.hash = '#login'; return; }
   const app = getApplication(user.id);
   if (!app || app.status !== 'accepted') { location.hash = '#status'; return; }
+
+  if (activeTab === 'chat') {
+    markMessagesAsRead(app.id, 'intern');
+  }
 
   container.innerHTML = '';
   renderNavbar(container, [
@@ -22,18 +26,30 @@ export function renderInternDashboard(container) {
 
   wrap.innerHTML = `<div class="page-header"><h1>Intern Dashboard</h1><p>Welcome, ${app.name}! Manage your internship here.</p></div>`;
 
+  if (!app.isDeployed && (activeTab === 'dtr' || activeTab === 'hours')) {
+    activeTab = 'deployment';
+  }
+
+  const unreadCount = getMessages(app.id).filter(m => m.from === 'hr' && !m.read).length;
+  const chatLabel = unreadCount > 0 
+    ? `💬 HR Comm <span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:4px">${unreadCount}</span>` 
+    : '💬 HR Comm';
+
   // Tabs
-  const tabs = [
+  let tabs = [
     { key: 'deployment', label: '📍 Deployment' },
     { key: 'documents', label: '📄 Documents' },
-    { key: 'dtr', label: '⏱️ DTR' },
-    { key: 'hours', label: '📊 Hours' },
+    { key: 'chat', label: chatLabel },
   ];
+  
+  if (app.isDeployed) {
+    tabs.push({ key: 'dtr', label: '⏱️ DTR' });
+    tabs.push({ key: 'hours', label: '📊 Hours' });
+  }
+
   let tabsHTML = '<div class="tabs">';
   tabs.forEach(t => {
-    const isDisabled = !app.isDeployed && (t.key === 'dtr' || t.key === 'hours');
-    tabsHTML += `<button class="tab ${activeTab === t.key ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
-      data-tab="${t.key}" ${isDisabled ? 'disabled title="Available after deployment"' : ''}>${t.label}</button>`;
+    tabsHTML += `<button class="tab ${activeTab === t.key ? 'active' : ''}" data-tab="${t.key}">${t.label}</button>`;
   });
   tabsHTML += '</div><div id="tab-content"></div>';
   wrap.innerHTML += tabsHTML;
@@ -53,6 +69,7 @@ export function renderInternDashboard(container) {
   switch (activeTab) {
     case 'deployment': renderDeployment(content, app); break;
     case 'documents': renderDocuments(content, app); break;
+    case 'chat': renderChatTab(content, app); break;
     case 'dtr': renderDTR(content, app); break;
     case 'hours': renderHoursTab(content, app); break;
   }
@@ -92,7 +109,66 @@ function renderDeployment(el, app) {
         </div>
       </div>
     `}
+    ${!app.isDeployed ? `
+      <div class="text-center mt-3">
+        <button class="btn btn-danger btn-sm" id="btn-intern-withdraw">Withdraw Internship</button>
+      </div>
+    ` : ''}
   `;
+
+  const withdrawBtn = document.getElementById('btn-intern-withdraw');
+  if (withdrawBtn) {
+    withdrawBtn.onclick = () => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal">
+          <h2>Withdraw Internship?</h2>
+          <p>Are you sure you want to withdraw from the internship program? This action cannot be undone, and your access will be revoked.</p>
+          <div class="form-group mt-1 text-left">
+            <label>Reason for Withdrawal</label>
+            <select id="withdraw-reason" class="form-control">
+              <option value="">-- Select Reason --</option>
+              <option value="Accepted another offer">Accepted another offer</option>
+              <option value="Schedule conflict">Schedule conflict</option>
+              <option value="Personal reasons">Personal reasons</option>
+              <option value="Health reasons">Health reasons</option>
+              <option value="Proximity/Location issues">Proximity/Location issues</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group text-left" id="group-withdraw-other" style="display:none; margin-top:-0.5rem">
+            <label>Please specify</label>
+            <input type="text" id="withdraw-reason-other" class="form-control" placeholder="Enter reason" />
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="btn-cancel-withdraw">Cancel</button>
+            <button class="btn btn-danger" id="btn-confirm-withdraw">Yes, Withdraw</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const reasonSelect = document.getElementById('withdraw-reason');
+      const otherGroup = document.getElementById('group-withdraw-other');
+      reasonSelect.onchange = () => {
+        otherGroup.style.display = reasonSelect.value === 'Other' ? 'block' : 'none';
+      };
+
+      document.getElementById('btn-cancel-withdraw').onclick = () => overlay.remove();
+      document.getElementById('btn-confirm-withdraw').onclick = () => {
+        let reason = reasonSelect.value;
+        if (!reason) { alert('Please select a reason for withdrawal.'); return; }
+        if (reason === 'Other') {
+          reason = document.getElementById('withdraw-reason-other').value;
+          if (!reason) { alert('Please specify your reason.'); return; }
+        }
+        updateAppStatus(app.id, 'withdrawn', { withdrawReason: reason });
+        overlay.remove();
+        window.APP.render();
+      };
+    };
+  }
 }
 
 function renderDocuments(el, app) {
@@ -106,9 +182,8 @@ function renderDocuments(el, app) {
 
   el.innerHTML = `
     <div class="flex mb-2" style="gap:0.5rem">
-      <button class="btn ${docSubTab !== 'school' && docSubTab !== 'chat' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="sub-company">Company Documents</button>
+      <button class="btn ${docSubTab !== 'school' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="sub-company">Company Documents</button>
       <button class="btn ${docSubTab === 'school' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="sub-school">School Documents</button>
-      <button class="btn ${docSubTab === 'chat' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="sub-chat">💬 HR Communication</button>
     </div>
     <div id="doc-content"></div>
   `;
@@ -183,56 +258,59 @@ function renderDocuments(el, app) {
     };
   }
 
-  function renderChat() {
-    let msgsHTML = '';
-    const data = getStore();
-    const hrUser = data.users.find(u => u.role === 'hr'); // Get representative name
-    const hrName = hrUser ? hrUser.name : 'HR Administrator';
+  if (docSubTab === 'company') renderCompanyDocs();
+  else if (docSubTab === 'school') renderSchoolDocs();
 
-    messages.forEach(m => {
-      const isMe = m.from === 'intern';
-      const cls = isMe ? 'sent' : 'received';
-      const senderLabel = isMe ? 'You' : hrName;
-      msgsHTML += `
-        <div class="chat-msg ${cls}">
-          <div style="font-size:0.65rem;font-weight:600;margin-bottom:0.2rem;opacity:0.8">${senderLabel}</div>
-          <div>${m.text}</div>
-          <div class="msg-time">${m.time}</div>
-        </div>
-      `;
-    });
-    if (!messages.length) msgsHTML = '<div class="empty-state" style="padding:2rem"><p>No messages yet. Start a conversation about your documents.</p></div>';
+  document.getElementById('sub-company').onclick = () => { el.dataset.subTab = 'company'; renderDocuments(el, app); };
+  document.getElementById('sub-school').onclick = () => { el.dataset.subTab = 'school'; renderDocuments(el, app); };
+}
 
-    docContent.innerHTML = `
+function renderChatTab(el, app) {
+  const messages = getMessages(app.id);
+  const data = getStore();
+  const hrUser = data.users.find(u => u.role === 'hr');
+  const hrName = hrUser ? hrUser.name : 'HR Administrator';
+
+  let msgsHTML = '';
+  messages.forEach(m => {
+    const isMe = m.from === 'intern';
+    const cls = isMe ? 'sent' : 'received';
+    const senderLabel = isMe ? 'You' : hrName;
+    msgsHTML += `
+      <div class="chat-msg ${cls}">
+        <div style="font-size:0.65rem;font-weight:600;margin-bottom:0.2rem;opacity:0.8">${senderLabel}</div>
+        <div>${m.text}</div>
+        <div class="msg-time">${m.time}</div>
+      </div>
+    `;
+  });
+  if (!messages.length) msgsHTML = '<div class="empty-state" style="padding:2rem"><p>No messages yet. Start a conversation with HR.</p></div>';
+
+  el.innerHTML = `
+    <div class="card">
+      <h3 class="mb-1">HR Communication</h3>
       <div class="chat-box">
         <div class="chat-messages">${msgsHTML}</div>
         <div class="chat-input">
-          <input type="text" class="form-control" id="chat-msg-input" placeholder="Type a message about your documents..." />
+          <input type="text" class="form-control" id="chat-msg-input" placeholder="Type a message..." />
           <button class="btn btn-primary btn-sm" id="btn-send-msg">Send</button>
         </div>
       </div>
-    `;
+    </div>
+  `;
 
-    // Scroll to bottom
-    const chatMsgs = docContent.querySelector('.chat-messages');
-    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+  const chatMsgs = el.querySelector('.chat-messages');
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
 
-    document.getElementById('btn-send-msg').onclick = () => {
-      const input = document.getElementById('chat-msg-input');
-      if (!input.value.trim()) return;
-      sendMessage(app.id, 'intern', input.value.trim());
-      renderInternDashboard(document.getElementById('app'));
-    };
-    document.getElementById('chat-msg-input').onkeydown = (e) => {
-      if (e.key === 'Enter') document.getElementById('btn-send-msg').click();
-    };
-  }
-
-  renderCompanyDocs();
-
-  document.getElementById('sub-company').onclick = () => { renderCompanyDocs(); };
-  document.getElementById('sub-school').onclick = () => { renderSchoolDocs(); };
-  document.getElementById('sub-chat').onclick = () => { renderChat(); };
+  document.getElementById('btn-send-msg').onclick = () => {
+    const input = document.getElementById('chat-msg-input');
+    if (!input.value.trim()) return;
+    sendMessage(app.id, 'intern', input.value.trim());
+    renderInternDashboard(document.getElementById('app'));
+  };
+  document.getElementById('chat-msg-input').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-send-msg').click();
+  };
 }
 
 function renderDTR(el, app) {

@@ -116,6 +116,25 @@ export function saveStore(data) {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
 }
 
+export function saveEmailTemplate(template) {
+  const data = getStore();
+  if (!data.emailTemplates) data.emailTemplates = [];
+  const idx = data.emailTemplates.findIndex(t => t.id === template.id);
+  if (idx > -1) {
+    data.emailTemplates[idx] = template;
+  } else {
+    data.emailTemplates.push({ ...template, id: 'temp_' + Date.now() });
+  }
+  saveStore(data);
+}
+
+export function deleteEmailTemplate(id) {
+  const data = getStore();
+  if (!data.emailTemplates) return;
+  data.emailTemplates = data.emailTemplates.filter(t => t.id !== id);
+  saveStore(data);
+}
+
 export function resetStore() {
   localStorage.removeItem(STORE_KEY);
   return getStore();
@@ -231,10 +250,22 @@ export function getMessages(appId) {
 
 export function sendMessage(appId, from, text) {
   const data = getStore();
-  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString() };
+  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString(), read: false };
   data.messages.push(msg);
   saveStore(data);
   return msg;
+}
+
+export function markMessagesAsRead(appId, readByRole) {
+  const data = getStore();
+  let changed = false;
+  data.messages.forEach(m => {
+    if (m.appId === appId && m.from !== readByRole && !m.read) {
+      m.read = true;
+      changed = true;
+    }
+  });
+  if (changed) saveStore(data);
 }
 
 // Document helpers

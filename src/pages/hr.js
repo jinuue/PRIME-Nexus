@@ -1,5 +1,5 @@
-import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS, getQuarter, deployIntern, addLegacyIntern } from '../store.js';
-import { renderNavbar } from '../main.js';
+import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead } from '../store.js';
+import { renderNavbar, setupPhoneMask } from '../main.js';
 
 let hrSection = 'applications';
 let hrFilters = { quarter: 'all', dept: 'all', type: 'all' };
@@ -17,19 +17,46 @@ export function renderHRDashboard(container) {
   // Sidebar
   const sidebar = document.createElement('div');
   sidebar.className = 'hr-sidebar';
-  const sections = [
-    { key: 'applications', icon: '📋', label: 'Applications' },
-    { key: 'masterlist_applicants', icon: '👤', label: 'Applicants List' },
-    { key: 'masterlist_interns', icon: '🎓', label: 'Deployed Interns' },
-    { key: 'docs', icon: '📄', label: 'Document Tracking' },
-    { key: 'email', icon: '✉️', label: 'Email Templates' },
-    { key: 'messages', icon: '💬', label: 'Communications' },
-    { key: 'dtr', icon: '⏱️', label: 'DTR Access' },
-    { key: 'historical', icon: '📂', label: 'Historical Records' },
-    { key: 'analytics', icon: '📊', label: 'Analytics' },
+  const groups = [
+    {
+      title: 'Recruitment',
+      items: [
+        { key: 'applications', icon: '📋', label: 'Applications' },
+        { key: 'masterlist_applicants', icon: '👤', label: 'Applicants List' },
+      ]
+    },
+    {
+      title: 'Intern Management',
+      items: [
+        { key: 'masterlist_interns', icon: '🎓', label: 'Deployed Interns' },
+        { key: 'docs', icon: '📄', label: 'Document Tracking' },
+        { key: 'dtr', icon: '⏱️', label: 'DTR Access' },
+      ]
+    },
+    {
+      title: 'Communications',
+      items: [
+        { key: 'email', icon: '✉️', label: 'Email Templates' },
+        { key: 'messages', icon: '💬', label: 'Communications' },
+      ]
+    },
+    {
+      title: 'Records & Insights',
+      items: [
+        { key: 'historical', icon: '📂', label: 'Historical Records' },
+        { key: 'analytics', icon: '📊', label: 'Analytics' },
+      ]
+    }
   ];
-  sidebar.innerHTML = `<div class="hr-sidebar-section">Management</div>` +
-    sections.map(s => `<button class="hr-sidebar-link ${hrSection === s.key ? 'active' : ''}" data-section="${s.key}">${s.icon} ${s.label}</button>`).join('');
+
+  sidebar.innerHTML = groups.map(g => `
+    <div class="hr-sidebar-section">${g.title}</div>
+    ${g.items.map(s => `
+      <button class="hr-sidebar-link ${hrSection === s.key ? 'active' : ''}" style="display:flex;align-items:center;width:100%" data-section="${s.key}">
+        <span style="margin-right:0.5rem">${s.icon}</span> <span>${s.label}</span>
+      </button>
+    `).join('')}
+  `).join('');
   layout.appendChild(sidebar);
 
   // Content area
@@ -52,7 +79,36 @@ export function renderHRDashboard(container) {
   renderHRContent(content);
 }
 
+export function updateSidebarBadge() {
+  const data = getStore();
+  let unreadMessagesCount = 0;
+  (data.applications || []).forEach(a => {
+    if (a.status === 'accepted') {
+      const msgs = getMessages(a.id);
+      const unreadCount = msgs.filter(m => m.from === 'intern' && !m.read).length;
+      if (unreadCount > 0) unreadMessagesCount++;
+    }
+  });
+
+  const sidebarBtn = document.querySelector('.hr-sidebar-link[data-section="messages"]');
+  if (sidebarBtn) {
+    let badge = sidebarBtn.querySelector('.nav-badge');
+    if (unreadMessagesCount > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-badge';
+        badge.style.cssText = 'background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:auto';
+        sidebarBtn.appendChild(badge);
+      }
+      badge.textContent = unreadMessagesCount;
+    } else if (badge) {
+      badge.remove();
+    }
+  }
+}
+
 function renderHRContent(content) {
+  updateSidebarBadge();
   const data = getStore();
   const apps = data.applications || [];
   content.innerHTML = '';
@@ -414,10 +470,49 @@ function attachAppListeners(container, data) {
           alert('Please assign a department first before deployment.');
           return;
         }
-        if (confirm(`Deploy ${app.name} to the office? This will enable their DTR and hours tracking.`)) {
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal">
+            <h2>Deploy Intern</h2>
+            <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1rem">Assign the final deployment details for <strong>${app.name}</strong>.</p>
+            <form id="deploy-form">
+              <div class="form-group">
+                <label>Assigned Supervisor</label>
+                <input type="text" class="form-control" name="supervisor" placeholder="e.g. John Doe" required />
+              </div>
+              <div class="form-group">
+                <label>Work Schedule</label>
+                <input type="text" class="form-control" name="schedule" value="Mon-Fri, 8:00 AM - 5:00 PM" required />
+              </div>
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" class="form-control" name="startDate" value="${new Date().toISOString().split('T')[0]}" required />
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-deploy">Cancel</button>
+                <button type="submit" class="btn btn-success">🚀 Confirm Deployment</button>
+              </div>
+            </form>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('btn-cancel-deploy').onclick = () => overlay.remove();
+        document.getElementById('deploy-form').onsubmit = (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          app.supervisor = fd.get('supervisor');
+          app.schedule = fd.get('schedule');
+          app.startDate = fd.get('startDate');
+          saveStore(store); // save these new details
+
           deployIntern(app.id);
+          overlay.remove();
           renderHRContent(document.querySelector('.hr-content'));
-        }
+          alert('Intern successfully deployed!');
+        };
       }
     };
   });
@@ -481,7 +576,12 @@ function renderMasterlist(el, apps, type) {
 function renderEmailTemplates(el, apps) {
   const store = getStore();
   const templates = store.emailTemplates || [];
-  el.innerHTML = '<h2 class="mb-2">✉️ Email Templates</h2>';
+  el.innerHTML = `
+    <div class="flex-between mb-2">
+      <h2 class="mb-0">✉️ Email Templates</h2>
+      <button class="btn btn-primary btn-sm" id="btn-add-template">➕ Add Template</button>
+    </div>
+  `;
 
   let selectedTemplate = null;
   const templatesDiv = document.createElement('div');
@@ -510,8 +610,15 @@ function renderEmailTemplates(el, apps) {
     editorArea.innerHTML = `
       <div class="card mb-2">
         <div class="flex-between mb-1">
-          <h3>Edit Template: ${selectedTemplate.name}</h3>
-          <button class="btn btn-primary btn-sm" id="btn-save-template">💾 Save Template</button>
+          <h3>Edit Template</h3>
+          <div class="flex" style="gap:0.5rem">
+            <button class="btn btn-danger btn-sm" id="btn-delete-template">🗑️ Delete</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-template">💾 Save Template</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Template Name</label>
+          <input type="text" class="form-control" id="edit-template-name" value="${selectedTemplate.name}" />
         </div>
         <div class="form-group">
           <label>Subject</label>
@@ -534,14 +641,25 @@ function renderEmailTemplates(el, apps) {
     `;
 
     document.getElementById('btn-save-template').onclick = () => {
+      const name = document.getElementById('edit-template-name').value;
       const subject = document.getElementById('edit-template-subject').value;
       const body = document.getElementById('edit-template-body').value;
       const currentStore = getStore();
+      currentStore.emailTemplates[selectedTemplate.index].name = name;
       currentStore.emailTemplates[selectedTemplate.index].subject = subject;
       currentStore.emailTemplates[selectedTemplate.index].body = body;
       saveStore(currentStore);
       alert('Template saved successfully!');
       renderHRContent(document.querySelector('.hr-content'));
+    };
+
+    document.getElementById('btn-delete-template').onclick = () => {
+      if (confirm(`Are you sure you want to delete the template "${selectedTemplate.name}"? This action cannot be undone.`)) {
+        deleteEmailTemplate(selectedTemplate.id);
+        selectedTemplate = null;
+        renderEmailTemplates(el, apps);
+        alert('Template deleted successfully.');
+      }
     };
 
     document.getElementById('email-recipient').onchange = (e) => {
@@ -573,16 +691,62 @@ function renderEmailTemplates(el, apps) {
       }
     };
   }
+
+  document.getElementById('btn-add-template').onclick = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>Create New Template</h2>
+        <div class="form-group">
+          <label>Template Name</label>
+          <input type="text" id="new-template-name" class="form-control" placeholder="e.g. Follow-up" required />
+        </div>
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="new-template-subject" class="form-control" placeholder="Email subject" required />
+        </div>
+        <div class="form-group">
+          <label>Body</label>
+          <textarea id="new-template-body" class="form-control" style="height:150px"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
+          <button class="btn btn-primary" id="btn-confirm-add">Create</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('btn-cancel-add').onclick = () => overlay.remove();
+    document.getElementById('btn-confirm-add').onclick = () => {
+      const name = document.getElementById('new-template-name').value;
+      const subject = document.getElementById('new-template-subject').value;
+      const body = document.getElementById('new-template-body').value;
+      if (!name || !subject) return;
+      saveEmailTemplate({ name, subject, body });
+      overlay.remove();
+      renderEmailTemplates(el, apps);
+    };
+  };
 }
 
-function renderMessages(el, apps) {
-  const interns = apps.filter(a => a.status === 'accepted');
-  el.innerHTML = '<h2 class="mb-2">💬 Intern Communications</h2>';
+let activeChatInternId = null;
 
-  if (!interns.length) {
+function renderMessages(el, apps) {
+  const allInterns = apps.filter(a => a.status === 'accepted' && a.isDeployed);
+  const activeInterns = allInterns.filter(i => getMessages(i.id).length > 0);
+
+  el.innerHTML = `
+    <div class="flex" style="justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="margin:0">💬 Intern Communications</h2>
+      <button class="btn btn-primary btn-sm" id="btn-new-chat">➕ New Conversation</button>
+    </div>
+  `;
+
+  if (!allInterns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<div class="icon">📭</div><p>No deployed interns</p>';
+    empty.innerHTML = '<div class="icon">📭</div><p>No deployed interns available to message.</p>';
     el.appendChild(empty);
     return;
   }
@@ -598,20 +762,45 @@ function renderMessages(el, apps) {
   list.className = 'card';
   list.style.padding = '0';
   list.style.overflowY = 'auto';
-  list.innerHTML = `<div style="padding:1rem;border-bottom:1px solid var(--border);font-weight:600">Interns</div>`;
-  interns.forEach(i => {
+  
+  // Sort interns by latest message
+  activeInterns.sort((a, b) => {
+    const msgsA = getMessages(a.id);
+    const msgsB = getMessages(b.id);
+    const timeA = msgsA.length > 0 ? parseInt(msgsA[msgsA.length - 1].id.slice(3)) : 0;
+    const timeB = msgsB.length > 0 ? parseInt(msgsB[msgsB.length - 1].id.slice(3)) : 0;
+    return timeB - timeA;
+  });
+
+  list.innerHTML = `<div style="padding:1rem;border-bottom:1px solid var(--border);font-weight:600">Active Conversations</div>`;
+  if (activeInterns.length === 0) {
+    list.innerHTML += `<div style="padding:1rem;font-size:0.8rem;color:var(--text-secondary);text-align:center">No active messages. Start a new conversation.</div>`;
+  }
+
+  activeInterns.forEach(i => {
     const msgs = getMessages(i.id);
-    const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1].text : 'No messages yet';
+    const lastMsgObj = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+    const lastMsg = lastMsgObj ? lastMsgObj.text : 'No messages yet';
+    const isUnread = msgs.some(m => m.from === 'intern' && !m.read);
+    const timeStr = lastMsgObj ? lastMsgObj.time.split(',')[0] : '';
+    
     const item = document.createElement('div');
     item.className = 'doc-item';
     item.style.padding = '1rem';
     item.style.borderBottom = '1px solid var(--border)';
     item.style.cursor = 'pointer';
+    item.style.display = 'flex';
+    item.style.justifyContent = 'space-between';
+    item.style.alignItems = 'center';
+    item.style.background = i.id === activeChatInternId ? 'var(--surface2)' : 'none';
     item.innerHTML = `
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:0.9rem">${i.name}</div>
-        <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lastMsg}</div>
+      <div style="flex:1;overflow:hidden">
+        <div style="font-weight:600;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem">
+          ${i.name} ${isUnread ? '<span style="background:var(--accent-red);width:8px;height:8px;border-radius:50%;display:inline-block"></span>' : ''}
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:${isUnread ? '600' : 'normal'}">${lastMsg}</div>
       </div>
+      <div style="font-size:0.65rem;color:var(--text-secondary)">${timeStr}</div>
     `;
     item.onclick = () => {
       list.querySelectorAll('.doc-item').forEach(d => d.style.background = 'none');
@@ -633,6 +822,9 @@ function renderMessages(el, apps) {
   grid.appendChild(chatArea);
 
   function renderChat(intern) {
+    activeChatInternId = intern.id;
+    markMessagesAsRead(intern.id, 'hr');
+    updateSidebarBadge();
     const messages = getMessages(intern.id);
     let msgsHTML = '';
     messages.forEach(m => {
@@ -642,7 +834,7 @@ function renderMessages(el, apps) {
 
     chatArea.innerHTML = `
       <div style="padding:1rem;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600">${intern.name} — ${intern.department || 'Unassigned'}</div>
-      <div class="chat-messages" style="flex:1;overflow-y:auto;padding:1rem">${msgsHTML || '<div class="empty-state"><p>No messages yet</p></div>'}</div>
+      <div class="chat-messages" style="flex:1;overflow-y:auto;padding:1rem">${msgsHTML || '<div class="empty-state"><p>No messages yet. Send the first message!</p></div>'}</div>
       <div class="chat-input" style="padding:1rem;border-top:1px solid var(--border)">
         <input type="text" class="form-control" id="hr-chat-msg-input" placeholder="Type a message to ${intern.name}..." />
         <button class="btn btn-primary btn-sm" id="btn-hr-send-msg">Send</button>
@@ -656,11 +848,52 @@ function renderMessages(el, apps) {
       const input = document.getElementById('hr-chat-msg-input');
       if (!input.value.trim()) return;
       sendMessage(intern.id, 'hr', input.value.trim());
-      renderChat(intern);
+      renderHRContent(document.querySelector('.hr-content')); // Re-render to update the list
     };
     document.getElementById('hr-chat-msg-input').onkeydown = (e) => {
       if (e.key === 'Enter') document.getElementById('btn-hr-send-msg').click();
     };
+  }
+
+  // Handle New Conversation Modal
+  document.getElementById('btn-new-chat').onclick = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const options = allInterns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('');
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>Start New Conversation</h2>
+        <div class="form-group mt-1">
+          <label>Select Deployed Intern</label>
+          <select id="new-chat-intern" class="form-control">
+            <option value="">-- Choose Intern --</option>
+            ${options}
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-cancel-chat">Cancel</button>
+          <button class="btn btn-primary" id="btn-start-chat">Start Chat</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('btn-cancel-chat').onclick = () => overlay.remove();
+    document.getElementById('btn-start-chat').onclick = () => {
+      const id = document.getElementById('new-chat-intern').value;
+      if (!id) return;
+      const intern = allInterns.find(a => a.id === id);
+      if (intern) {
+        activeChatInternId = intern.id;
+        renderHRContent(document.querySelector('.hr-content'));
+      }
+      overlay.remove();
+    };
+  };
+
+  // Auto-open active chat if exists
+  if (activeChatInternId) {
+    const intern = allInterns.find(a => a.id === activeChatInternId);
+    if (intern) renderChat(intern);
   }
 }
 
@@ -852,12 +1085,51 @@ function renderHistoricalData(el) {
           </select>
         </div>
         <div class="form-group">
-          <label>Internship Period (e.g. Feb - May 2024)</label>
-          <input type="text" name="period" class="form-control" placeholder="e.g. Q1 2024" required />
+          <label>Internship Period</label>
+          <select name="period_select" class="form-control" id="select-legacy-period" required>
+            <option value="">-- Select Period --</option>
+            <option value="Q1-2026">Q1 (Jan-Mar) 2026</option>
+            <option value="Q4-2025">Q4 (Oct-Dec) 2025</option>
+            <option value="Q3-2025">Q3 (Jul-Sep) 2025</option>
+            <option value="Q2-2025">Q2 (Apr-Jun) 2025</option>
+            <option value="Q1-2025">Q1 (Jan-Mar) 2025</option>
+            <option value="Q4-2024">Q4 (Oct-Dec) 2024</option>
+            <option value="Q3-2024">Q3 (Jul-Sep) 2024</option>
+            <option value="Q2-2024">Q2 (Apr-Jun) 2024</option>
+            <option value="Q1-2024">Q1 (Jan-Mar) 2024</option>
+            <option value="other">Add Quarter (Custom)</option>
+          </select>
+        </div>
+        <div class="form-group" id="group-legacy-other-period" style="display:none; grid-column: span 2">
+          <div class="flex" style="gap:0.75rem; align-items: flex-end">
+            <div style="flex:1">
+              <label>Start Month</label>
+              <select id="input-legacy-start" class="form-control">
+                ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m => `<option value="${m}">${m}</option>`).join('')}
+              </select>
+            </div>
+            <div style="flex:1">
+              <label>End Month</label>
+              <select id="input-legacy-end" class="form-control">
+                ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m => `<option value="${m}">${m}</option>`).join('')}
+              </select>
+            </div>
+            <div style="width:100px">
+              <label>Year</label>
+              <input type="number" id="input-legacy-y" class="form-control" placeholder="2024" value="2024" />
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label>Total Hours Rendered</label>
           <input type="number" name="hours" class="form-control" placeholder="e.g. 480" required />
+        </div>
+        <div class="form-group">
+          <label>OJT Type</label>
+          <select name="ojtType" class="form-control" required>
+            <option value="required">Required by School</option>
+            <option value="voluntary">Voluntary</option>
+          </select>
         </div>
         <div class="form-group">
           <label>DTR Excel File</label>
@@ -871,6 +1143,13 @@ function renderHistoricalData(el) {
           <label>Cover Letter / Portfolio (Optional)</label>
           <input type="file" name="portfolio" class="form-control" accept=".pdf,.doc,.docx" style="padding:0.4rem" />
         </div>
+        <div class="form-group">
+          <label>COC Status (Certificate of Completion)</label>
+          <select name="cocStatus" class="form-control" required>
+            <option value="not_released">Not Released</option>
+            <option value="released">Released</option>
+          </select>
+        </div>
         <div style="grid-column: span 2; text-align: right; margin-top:0.5rem">
           <button type="submit" class="btn btn-primary">➕ Add to Archive</button>
         </div>
@@ -878,7 +1157,20 @@ function renderHistoricalData(el) {
     </div>
 
     <div class="card">
-      <h3 class="mb-1">Archived Interns List</h3>
+      <div class="flex-between mb-2">
+        <h3 class="mb-0">Archived Interns List</h3>
+        <div class="flex" style="gap:0.75rem">
+          <select id="filter-legacy-dept" class="form-control" style="width:160px; font-size:0.8rem">
+            <option value="all">All Departments</option>
+            ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+          </select>
+          <select id="filter-legacy-type" class="form-control" style="width:140px; font-size:0.8rem">
+            <option value="all">All OJT Types</option>
+            <option value="required">Required</option>
+            <option value="voluntary">Voluntary</option>
+          </select>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -886,39 +1178,87 @@ function renderHistoricalData(el) {
               <th>Intern Details</th>
               <th>Academic & Dept</th>
               <th>Period & Hours</th>
+              <th>COC Status</th>
               <th>Documents</th>
             </tr>
           </thead>
-          <tbody>
-            ${legacy.length > 0 ? legacy.map(l => `
-              <tr>
-                <td>
-                  <strong>${l.name}</strong><br>
-                  <span style="font-size:0.75rem;color:var(--text-secondary)">${l.email}</span><br>
-                  <span style="font-size:0.75rem;color:var(--text-secondary)">${l.phone}</span>
-                </td>
-                <td>
-                  <span style="font-size:0.8rem">${l.school}</span><br>
-                  <span class="badge badge-blue" style="margin-top:0.25rem">${l.department}</span>
-                </td>
-                <td>
-                  <span style="font-size:0.8rem">${l.period}</span><br>
-                  <strong>${l.hours}h rendered</strong>
-                </td>
-                <td>
-                  <div class="flex" style="gap:0.35rem;flex-wrap:wrap">
-                    <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing DTR: ${l.dtrFileName}')">📊 DTR</button>
-                    <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Resume: ${l.resumeFileName}')">📄 Resume</button>
-                    ${l.portfolioFileName ? `<button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Portfolio: ${l.portfolioFileName}')">🎨 Portfolio</button>` : ''}
-                  </div>
-                </td>
-              </tr>
-            `).join('') : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary)">No historical records found.</td></tr>'}
+          <tbody id="legacy-table-body">
+            <!-- Table content rendered by script -->
           </tbody>
         </table>
       </div>
     </div>
   `;
+
+  const periodSelect = el.querySelector('#select-legacy-period');
+  const otherPeriodGroup = el.querySelector('#group-legacy-other-period');
+  periodSelect.onchange = () => {
+    otherPeriodGroup.style.display = periodSelect.value === 'other' ? 'block' : 'none';
+  };
+
+  const filterDept = el.querySelector('#filter-legacy-dept');
+  const filterType = el.querySelector('#filter-legacy-type');
+  const tbody = el.querySelector('#legacy-table-body');
+
+  function renderList() {
+    let list = [...legacy];
+    
+    // Filtering
+    if (filterDept.value !== 'all') list = list.filter(l => l.department === filterDept.value);
+    if (filterType.value !== 'all') list = list.filter(l => l.ojtType === filterType.value);
+
+    // Sorting: Ascending per Quarter/Year (Q1-2024 format)
+    list.sort((a, b) => {
+      const [qA, yA] = a.period.split('-').map(s => s.replace('Q', ''));
+      const [qB, yB] = b.period.split('-').map(s => s.replace('Q', ''));
+      if (yA !== yB) return yA - yB;
+      return qA - qB;
+    });
+
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary)">No records match your filters.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = list.map(l => `
+      <tr>
+        <td>
+          <strong>${l.name}</strong><br>
+          <span style="font-size:0.75rem;color:var(--text-secondary)">${l.email}</span><br>
+          <span style="font-size:0.75rem;color:var(--text-secondary)">${l.phone}</span>
+        </td>
+        <td>
+          <span style="font-size:0.8rem">${l.school}</span><br>
+          <div class="flex" style="gap:0.35rem;margin-top:0.25rem">
+            <span class="badge badge-blue">${l.department}</span>
+            <span class="badge ${l.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${l.ojtType === 'required' ? 'Req' : 'Vol'}</span>
+          </div>
+        </td>
+        <td>
+          <span style="font-size:0.8rem">${l.period.replace('-', ' ')}</span><br>
+          <strong>${l.hours}h rendered</strong>
+        </td>
+        <td>
+          <span class="badge ${l.cocStatus === 'released' ? 'badge-green' : 'badge-gray'}">
+            ${l.cocStatus === 'released' ? '✅ Released' : '⏳ Pending'}
+          </span>
+        </td>
+        <td>
+          <div class="flex" style="gap:0.35rem;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing DTR: ${l.dtrFileName}')">📊 DTR</button>
+            <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Resume: ${l.resumeFileName}')">📄 Resume</button>
+            ${l.portfolioFileName ? `<button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Portfolio: ${l.portfolioFileName}')">🎨 Portfolio</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  filterDept.onchange = renderList;
+  filterType.onchange = renderList;
+  renderList();
+
+  setupPhoneMask(el.querySelector('input[name="phone"]'));
 
   document.getElementById('legacy-form').onsubmit = (e) => {
     e.preventDefault();
@@ -926,6 +1266,14 @@ function renderHistoricalData(el) {
     const dtrFile = e.target.querySelector('[name=dtrFile]').files[0];
     const resumeFile = e.target.querySelector('[name=resume]').files[0];
     const portfolioFile = e.target.querySelector('[name=portfolio]').files[0];
+
+    let period = fd.get('period_select');
+    if (period === 'other') {
+      const s = el.querySelector('#input-legacy-start').value;
+      const e_ = el.querySelector('#input-legacy-end').value;
+      const y = el.querySelector('#input-legacy-y').value;
+      period = `${s}-${e_} ${y}`;
+    }
     
     addLegacyIntern({
       name: fd.get('name'),
@@ -934,7 +1282,9 @@ function renderHistoricalData(el) {
       school: fd.get('school'),
       department: fd.get('department'),
       hours: fd.get('hours'),
-      period: fd.get('period'),
+      period: period,
+      ojtType: fd.get('ojtType'),
+      cocStatus: fd.get('cocStatus'),
       dtrFileName: dtrFile ? dtrFile.name : null,
       resumeFileName: resumeFile ? resumeFile.name : null,
       portfolioFileName: portfolioFile ? portfolioFile.name : null
