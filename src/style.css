@@ -12,7 +12,7 @@
   --primary: #002E5D;
   --primary-mid: #003F7D;
   --primary-light: #1E3F7D;
-  --accent-red: #E11D48;
+  --accent-red: #DC2626;
   --accent-yellow: #FFD700;
   --bg: #FFFFFF;
   --surface: #F8FAFC;
@@ -325,7 +325,7 @@ a {
 }
 
 .btn-danger:hover {
-  background: #c50000;
+  background: #B91C1C;
 }
 
 .btn-success {
@@ -1007,7 +1007,8 @@ tr:hover {
 /* HR Sidebar Layout */
 .hr-layout {
   display: flex;
-  min-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
+  overflow: hidden;
 }
 
 .hr-sidebar {
@@ -1016,6 +1017,7 @@ tr:hover {
   border-right: 1px solid var(--border);
   padding: 1.25rem 0;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .hr-sidebar-link {

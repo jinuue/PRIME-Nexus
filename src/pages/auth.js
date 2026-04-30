@@ -1,4 +1,5 @@
 import { loginUser, registerUser } from '../store.js';
+import { setupPhoneMask } from '../main.js';
 
 export function renderLogin(container, mode = 'intern') {
   const isHR = mode === 'hr';
@@ -90,6 +91,8 @@ export function renderRegister(container) {
       </div>
     </div>
   `;
+
+  setupPhoneMask(document.getElementById('input-phone'));
 
   document.getElementById('register-form').onsubmit = (e) => {
     e.preventDefault();

@@ -1,5 +1,5 @@
 import { submitApplication, getApplication, DEPARTMENTS } from '../store.js';
-import { renderNavbar } from '../main.js';
+import { renderNavbar, setupPhoneMask } from '../main.js';
 
 export function renderApply(container) {
   const user = window.APP.user;
@@ -83,6 +83,7 @@ export function renderApply(container) {
                 <option value="Lyceum of the Philippines University">Lyceum of the Philippines University (LPU)</option>
                 <option value="National University">National University (NU)</option>
                 <option value="Pamantasan ng Lungsod ng Maynila">Pamantasan ng Lungsod ng Maynila (PLM)</option>
+                <option value="University of Caloocan City">University of Caloocan City (UCC)</option>
               </optgroup>
               <optgroup label="Major Regional Schools">
                 <option value="University of San Carlos">University of San Carlos (USC) - Cebu</option>
@@ -163,6 +164,8 @@ export function renderApply(container) {
     const name = e.target.files[0]?.name;
     document.getElementById('cover-filename').textContent = name ? '✅ ' + name : '';
   };
+
+  setupPhoneMask(document.getElementById('input-phone'));
 
   // Toggle "Other" course input
   const courseSelect = document.getElementById('select-course');
