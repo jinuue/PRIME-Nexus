@@ -1,49 +1,41 @@
-// PRIME Philippines — Data Store (localStorage-based)
-const STORE_KEY = 'prime_ims_data';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-const EMAIL_TEMPLATES = [
-  {
-    id: 'initial_invite', name: 'Initial Interview Invitation', subject: 'PRIME Philippines — Initial Interview Schedule',
-    body: `Dear {name},\n\nThank you for your interest in the PRIME Philippines Internship Program.\n\nWe are pleased to inform you that you have been shortlisted for an Initial Interview. Please see the details below:\n\nDate: {date}\nTime: {time}\nMode: {mode}\n\nPlease confirm your attendance by replying to this email.\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'final_invite', name: 'Final Interview Invitation', subject: 'PRIME Philippines — Final Interview Schedule',
-    body: `Dear {name},\n\nCongratulations on passing the Initial Interview!\n\nYou are now scheduled for a Final Interview. Details are as follows:\n\nDate: {date}\nTime: {time}\nMode: {mode}\n\nPlease prepare any additional documents that may be required.\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'acceptance', name: 'Acceptance Letter', subject: 'PRIME Philippines — Internship Acceptance',
-    body: `Dear {name},\n\nWe are delighted to inform you that you have been accepted into the PRIME Philippines Internship Program!\n\nYou will be assigned to the {department} Department. Your internship details will be available in the Intern Portal.\n\nPlease log in to your account to view your deployment information and complete the required documents.\n\nWelcome to the team!\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'rejection', name: 'Application Update', subject: 'PRIME Philippines — Application Status Update',
-    body: `Dear {name},\n\nThank you for taking the time to apply for the PRIME Philippines Internship Program.\n\nAfter careful consideration, we regret to inform you that we will not be moving forward with your application at this time. This decision does not reflect on your abilities, and we encourage you to apply again in the future.\n\nWe wish you the best in your academic and professional endeavors.\n\nSincerely,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'doc_reminder', name: 'Document Reminder', subject: 'PRIME Philippines — Document Submission Reminder',
-    body: `Dear {name},\n\nThis is a friendly reminder to submit the required documents for your internship at PRIME Philippines.\n\nPending documents can be viewed and uploaded through your Intern Portal dashboard.\n\nPlease submit them at your earliest convenience to avoid delays in your onboarding process.\n\nThank you,\nHR Department\nPRIME Philippines`
-  },
-];
+let storeCache = null;
+let initPromise = null;
 
-const DEPARTMENTS = ['Marketing', 'IT / Development', 'Human Resources', 'Finance', 'Operations', 'Legal', 'Creative / Design', 'Admin Support'];
+async function apiFetch(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
 
-const COMPANY_DOCUMENTS = [
-  { id: 'doc1', name: 'Non-Disclosure Agreement (NDA)', desc: 'Must be signed before deployment', type: 'sign' },
-  { id: 'doc2', name: 'Internship Agreement', desc: 'Terms and conditions of the internship', type: 'sign' },
-  { id: 'doc3', name: 'Company Rules & Regulations', desc: 'Acknowledgment of company policies', type: 'sign' },
-  { id: 'doc4', name: 'Emergency Contact Form', desc: 'For emergency purposes', type: 'submit' },
-  { id: 'doc5', name: 'Medical Certificate', desc: 'Fit to work certification', type: 'submit' },
-];
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
 
-const SEED_DATA = {
-  users: [
-    { id: 'hr1', email: 'hr@primeph.com', password: 'admin123', name: 'Maria Santos', role: 'hr' },
-  ],
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+function makeId(prefix) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+const EMPTY_STORE = {
+  users: [],
   applications: [],
   dtrEntries: [],
   schoolActivities: [],
   messages: [],
-  quarterSettings: { current: 'Q2-2026' },
-  emailTemplates: [...EMAIL_TEMPLATES],
+  // Merge all fields from both branches
+  emailTemplates: typeof EMAIL_TEMPLATES !== 'undefined' ? [...EMAIL_TEMPLATES] : [],
+  companyDocuments: [],
   deptSlots: {
     'Marketing': 5,
     'IT / Development': 3,
@@ -54,90 +46,70 @@ const SEED_DATA = {
     'Creative / Design': 3,
     'Admin Support': 4
   },
+  quarterSettings: { current: 'Q2-2026' },
   legacyInterns: []
 };
 
-function generateSeedApplicants() {
-  const now = new Date();
-  const apps = [
-    {
-      id: 'app1', userId: 'u1', name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Engr. Carlos Reyes', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
-      companyDocs: { doc1: 'signed', doc2: 'signed', doc3: 'submitted', doc4: 'pending', doc5: 'pending' },
-      schoolDocs: [{ id: 'sd1', name: 'Endorsement Letter', status: 'submitted', signedBy: null }],
-    },
-    { id: 'app2', userId: 'u2', name: 'Ana Marie Garcia', email: 'ana@email.com', password: 'pass123', phone: '09181234567', course: 'BS Business Administration', school: 'De La Salle University', ojtType: 'voluntary', hoursRequired: 240, source: 'Facebook', status: 'final_interview', appliedDate: '2026-04-01', quarter: 'Q2-2026', interviewDate: '2026-05-05', interviewTime: '10:00 AM' },
-    { id: 'app3', userId: 'u3', name: 'Mark Anthony Reyes', email: 'mark@email.com', password: 'pass123', phone: '09191234567', course: 'BS Computer Science', school: 'Ateneo de Manila University', ojtType: 'required', hoursRequired: 600, source: 'Referral', status: 'initial_interview', appliedDate: '2026-04-10', quarter: 'Q2-2026', interviewDate: '2026-04-30', interviewTime: '2:00 PM' },
-    { id: 'app4', userId: 'u4', name: 'Sofia Lim', email: 'sofia@email.com', password: 'pass123', phone: '09201234567', course: 'BS Accountancy', school: 'University of Santo Tomas', ojtType: 'required', hoursRequired: 480, source: 'Job Portal', status: 'failed', appliedDate: '2026-03-20', quarter: 'Q1-2026' },
-    { id: 'app5', userId: 'u5', name: 'Carlos Miguel Torres', email: 'carlos@email.com', password: 'pass123', phone: '09211234567', course: 'BS Marketing', school: 'Far Eastern University', ojtType: 'voluntary', hoursRequired: 300, source: 'Company Website', status: 'viewed', appliedDate: '2026-04-20', quarter: 'Q2-2026' },
-    { id: 'app6', userId: 'u6', name: 'Isabella Cruz', email: 'bella@email.com', password: 'pass123', phone: '09221234567', course: 'BS Psychology', school: 'Mapua University', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'submitted', appliedDate: '2026-04-25', quarter: 'Q2-2026' },
-  ];
+function normalizeStore(data) {
+  const normalized = data && typeof data === 'object' ? { ...data } : {};
+  normalized.users = Array.isArray(normalized.users) ? normalized.users : [];
+  normalized.applications = Array.isArray(normalized.applications) ? normalized.applications : [];
+  normalized.dtrEntries = Array.isArray(normalized.dtrEntries) ? normalized.dtrEntries : [];
+  normalized.schoolActivities = Array.isArray(normalized.schoolActivities) ? normalized.schoolActivities : [];
+  normalized.messages = Array.isArray(normalized.messages) ? normalized.messages : [];
+  normalized.emailTemplates = Array.isArray(normalized.emailTemplates) ? normalized.emailTemplates : [];
+  normalized.companyDocuments = Array.isArray(normalized.companyDocuments) ? normalized.companyDocuments : [];
+  normalized.deptSlots = normalized.deptSlots && typeof normalized.deptSlots === 'object'
+    ? normalized.deptSlots
+    : {};
+  normalized.quarterSettings = normalized.quarterSettings && typeof normalized.quarterSettings === 'object'
+    ? normalized.quarterSettings
+    : { current: null };
+  return normalized;
+}
 
-  const users = apps.map(a => ({ id: a.userId, email: a.email, password: a.password, name: a.name, role: a.status === 'accepted' ? 'intern' : 'applicant' }));
+function buildEmptyStore() {
+  return normalizeStore(EMPTY_STORE);
+}
 
-  const dtrEntries = [
-    { id: 'dtr1', appId: 'app1', date: '2026-04-01', timeIn: '08:00', timeOut: '17:30', type: 'work' },
-    { id: 'dtr2', appId: 'app1', date: '2026-04-02', timeIn: '08:00', timeOut: '17:00', type: 'work' },
-    { id: 'dtr3', appId: 'app1', date: '2026-04-03', timeIn: '08:00', timeOut: '18:00', type: 'work' },
-    { id: 'dtr4', appId: 'app1', date: '2026-04-04', timeIn: '08:00', timeOut: '17:00', type: 'work' },
-    { id: 'dtr5', appId: 'app1', date: '2026-04-07', timeIn: '08:30', timeOut: '17:30', type: 'work' },
-  ];
+async function persistStore() {
+  if (!storeCache) return;
+  try {
+    await apiFetch('/api/store', {
+      method: 'PUT',
+      body: JSON.stringify(storeCache),
+    });
+  } catch (error) {
+    console.warn('Failed to persist store data.', error);
+  }
+}
 
-  const messages = [
-    { id: 'msg1', appId: 'app1', from: 'hr', text: 'Hi Juan! Please submit your Medical Certificate as soon as possible.', time: '2026-04-20 09:00' },
-    { id: 'msg2', appId: 'app1', from: 'intern', text: 'Noted po! Will submit by Friday.', time: '2026-04-20 09:15' },
-  ];
-
-  return { users, applications: apps, dtrEntries, messages };
+export async function initStore() {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      const remote = await apiFetch('/api/store');
+      storeCache = normalizeStore(remote);
+    } catch (error) {
+      console.warn('Failed to load store data.', error);
+      storeCache = buildEmptyStore();
+    }
+    return storeCache;
+  })();
+  return initPromise;
 }
 
 export function getStore() {
-  const raw = localStorage.getItem(STORE_KEY);
-  if (raw) {
-    const data = JSON.parse(raw);
-    // Migration: ensure emailTemplates and deptSlots exist in old storage
-    if (!data.emailTemplates) data.emailTemplates = [...EMAIL_TEMPLATES];
-    if (!data.deptSlots) data.deptSlots = { ...SEED_DATA.deptSlots };
-    return data;
+  if (!storeCache) {
+    storeCache = buildEmptyStore();
   }
-  const seed = generateSeedApplicants();
-  const data = {
-    ...SEED_DATA,
-    users: [...SEED_DATA.users, ...seed.users],
-    applications: seed.applications,
-    dtrEntries: seed.dtrEntries,
-    schoolActivities: [],
-    messages: seed.messages,
-  };
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
-  return data;
+  return storeCache;
 }
 
 export function saveStore(data) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
-}
-
-export function saveEmailTemplate(template) {
-  const data = getStore();
-  if (!data.emailTemplates) data.emailTemplates = [];
-  const idx = data.emailTemplates.findIndex(t => t.id === template.id);
-  if (idx > -1) {
-    data.emailTemplates[idx] = template;
-  } else {
-    data.emailTemplates.push({ ...template, id: 'temp_' + Date.now() });
-  }
-  saveStore(data);
-}
-
-export function deleteEmailTemplate(id) {
-  const data = getStore();
-  if (!data.emailTemplates) return;
-  data.emailTemplates = data.emailTemplates.filter(t => t.id !== id);
-  saveStore(data);
-}
-
-export function resetStore() {
-  localStorage.removeItem(STORE_KEY);
-  return getStore();
+  storeCache = normalizeStore(data);
+  void persistStore();
+  return storeCache;
 }
 
 // Auth helpers
@@ -153,7 +125,7 @@ export function loginUser(email, password, role) {
 export function registerUser({ name, email, password, phone }) {
   const data = getStore();
   if (data.users.find(u => u.email === email)) return { error: 'Email already registered' };
-  const user = { id: 'u' + Date.now(), email, password, name, phone, role: 'applicant' };
+  const user = { id: makeId('user'), email, password, name, phone, role: 'applicant' };
   data.users.push(user);
   saveStore(data);
   return { user };
@@ -165,7 +137,7 @@ export function submitApplication(userId, formData) {
   const now = new Date();
   const q = getQuarter(now);
   const app = {
-    id: 'app' + Date.now(),
+    id: makeId('app'),
     userId,
     ...formData,
     status: 'submitted',
@@ -210,7 +182,7 @@ export function deployIntern(appId) {
 // DTR helpers
 export function addDtrEntry(appId, entry) {
   const data = getStore();
-  const dtr = { id: 'dtr' + Date.now(), appId, ...entry, type: 'work' };
+  const dtr = { id: makeId('dtr'), appId, ...entry, type: 'work' };
   data.dtrEntries.push(dtr);
   saveStore(data);
   return dtr;
@@ -224,7 +196,7 @@ export function getDtrEntries(appId) {
 export function addSchoolActivity(appId, entry) {
   const data = getStore();
   if (!data.schoolActivities) data.schoolActivities = [];
-  const sa = { id: 'sa' + Date.now(), appId, ...entry, status: 'pending', type: 'school' };
+  const sa = { id: makeId('sa'), appId, ...entry, status: 'pending', type: 'school' };
   data.schoolActivities.push(sa);
   saveStore(data);
   return sa;
@@ -250,22 +222,10 @@ export function getMessages(appId) {
 
 export function sendMessage(appId, from, text) {
   const data = getStore();
-  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString(), read: false };
+  const msg = { id: makeId('msg'), appId, from, text, time: new Date().toLocaleString() };
   data.messages.push(msg);
   saveStore(data);
   return msg;
-}
-
-export function markMessagesAsRead(appId, readByRole) {
-  const data = getStore();
-  let changed = false;
-  data.messages.forEach(m => {
-    if (m.appId === appId && m.from !== readByRole && !m.read) {
-      m.read = true;
-      changed = true;
-    }
-  });
-  if (changed) saveStore(data);
 }
 
 // Document helpers
@@ -283,7 +243,7 @@ export function addSchoolDoc(appId, doc) {
   const app = data.applications.find(a => a.id === appId);
   if (!app) return;
   if (!app.schoolDocs) app.schoolDocs = [];
-  app.schoolDocs.push({ id: 'sd' + Date.now(), ...doc, status: 'submitted', signedBy: null });
+  app.schoolDocs.push({ id: makeId('sd'), ...doc, status: 'submitted', signedBy: null });
   saveStore(data);
 }
 
@@ -351,4 +311,12 @@ export function formatHours(h) {
   return h.toFixed(1).replace(/\.0$/, '');
 }
 
-export { EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS };
+export function getDepartments() {
+  const data = getStore();
+  return Object.keys(data.deptSlots || {});
+}
+
+export function getCompanyDocuments() {
+  const data = getStore();
+  return Array.isArray(data.companyDocuments) ? data.companyDocuments : [];
+}
