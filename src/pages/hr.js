@@ -1,4 +1,4 @@
-import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead } from '../store.js';
+import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, getDepartments, getCompanyDocuments, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead } from '../store.js';
 import { renderNavbar, setupPhoneMask } from '../main.js';
 
 let hrSection = 'applications';
@@ -128,6 +128,7 @@ function renderHRContent(content) {
 
 function renderDocTracking(el, apps) {
   const interns = apps.filter(a => a.status === 'accepted');
+  const companyDocuments = getCompanyDocuments();
   el.innerHTML = '<h2 class="mb-2">📄 Document Tracking Dashboard</h2>';
 
   if (!interns.length) {
@@ -165,7 +166,7 @@ function renderDocTracking(el, apps) {
           <div class="doc-list">
     `;
 
-    COMPANY_DOCUMENTS.forEach(doc => {
+    companyDocuments.forEach(doc => {
       const status = companyDocs[doc.id] || 'pending';
       const badgeCls = status === 'signed' ? 'badge-green' : status === 'submitted' ? 'badge-blue' : 'badge-gray';
       html += `
@@ -239,13 +240,13 @@ function renderDocTracking(el, apps) {
 
 function renderFilterBar(el, apps) {
   const quarters = [...new Set(apps.map(a => a.quarter).filter(Boolean))].sort();
-  const depts = [...new Set(apps.map(a => a.department).filter(Boolean))];
+  const depts = getDepartments();
 
   el.innerHTML = `
     <div class="filter-bar">
       <label style="font-size:0.85rem;font-weight:600;color:var(--primary)">Filters:</label>
       <select id="f-quarter"><option value="all">All Quarters</option>${quarters.map(q => `<option value="${q}" ${hrFilters.quarter === q ? 'selected' : ''}>${q}</option>`).join('')}</select>
-      <select id="f-dept"><option value="all">All Departments</option>${DEPARTMENTS.map(d => `<option value="${d}" ${hrFilters.dept === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
+      <select id="f-dept"><option value="all">All Departments</option>${depts.map(d => `<option value="${d}" ${hrFilters.dept === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
       <select id="f-type"><option value="all">All Types</option><option value="required" ${hrFilters.type === 'required' ? 'selected' : ''}>Required</option><option value="voluntary" ${hrFilters.type === 'voluntary' ? 'selected' : ''}>Voluntary</option></select>
     </div>
   `;
@@ -272,6 +273,7 @@ let hrAppTab = 'submitted';
 
 function renderApplications(el, apps, data) {
   el.innerHTML = '<h2 class="mb-2">📋 Application Management</h2>';
+  const departments = getDepartments();
 
   // Slots Summary (Editable)
   const slotsDiv = document.createElement('div');
@@ -288,7 +290,7 @@ function renderApplications(el, apps, data) {
     <div class="grid-2" style="grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
   `;
 
-  DEPARTMENTS.forEach(dept => {
+  departments.forEach(dept => {
     const hired = apps.filter(a => a.status === 'accepted' && a.department === dept).length;
     const total = data.deptSlots?.[dept] || 0;
     const isFull = hired >= total && total > 0;
@@ -355,7 +357,7 @@ function renderApplications(el, apps, data) {
         `<option value="${s}" ${a.status === s ? 'selected' : ''}>${formatSt(s)}</option>`
       ).join('');
 
-      const deptOptions = DEPARTMENTS.map(d => `<option value="${d}" ${a.department === d ? 'selected' : ''}>${d}</option>`).join('');
+      const deptOptions = departments.map(d => `<option value="${d}" ${a.department === d ? 'selected' : ''}>${d}</option>`).join('');
 
       return `<tr>
         <td>
@@ -472,6 +474,7 @@ function attachAppListeners(container, data) {
         }
         
         const overlay = document.createElement('div');
+        const departments = getDepartments();
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
           <div class="modal">
@@ -1053,6 +1056,7 @@ function renderAnalytics(el, apps) {
 function renderHistoricalData(el) {
   const store = getStore();
   const legacy = store.legacyInterns || [];
+  const departments = getDepartments();
 
   el.innerHTML = `
     <h2 class="mb-2">📂 Historical Records</h2>
@@ -1081,7 +1085,7 @@ function renderHistoricalData(el) {
           <label>Department</label>
           <select name="department" class="form-control" required>
             <option value="">Select Dept</option>
-            ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -1162,7 +1166,7 @@ function renderHistoricalData(el) {
         <div class="flex" style="gap:0.75rem">
           <select id="filter-legacy-dept" class="form-control" style="width:160px; font-size:0.8rem">
             <option value="all">All Departments</option>
-            ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
           </select>
           <select id="filter-legacy-type" class="form-control" style="width:140px; font-size:0.8rem">
             <option value="all">All OJT Types</option>

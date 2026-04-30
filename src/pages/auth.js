@@ -38,17 +38,19 @@ export function renderLogin(container, mode = 'intern') {
     </div>
   `;
 
-  document.getElementById('login-form').onsubmit = (e) => {
+  document.getElementById('login-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const email = fd.get('email');
     const password = fd.get('password');
-    const user = loginUser(email, password, isHR ? 'hr' : 'intern');
-    if (user) {
-      window.APP.login(user);
-    } else {
-      document.getElementById('auth-error').innerHTML = `<div class="auth-error">${isHR ? 'Access denied. HR credentials required.' : 'Invalid email or password.'}</div>`;
+    const result = await loginUser(email, password, isHR ? 'hr' : 'intern');
+    if (result?.user) {
+      window.APP.login(result.user);
+      return;
     }
+    const message = result?.error?.message
+      || (isHR ? 'Access denied. HR credentials required.' : 'Invalid email or password.');
+    document.getElementById('auth-error').innerHTML = `<div class="auth-error">${message}</div>`;
   };
 }
 
@@ -94,10 +96,10 @@ export function renderRegister(container) {
 
   setupPhoneMask(document.getElementById('input-phone'));
 
-  document.getElementById('register-form').onsubmit = (e) => {
+  document.getElementById('register-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const result = registerUser({
+    const result = await registerUser({
       name: fd.get('name'),
       email: fd.get('email'),
       phone: fd.get('phone'),

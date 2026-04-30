@@ -1,5 +1,6 @@
 import './style.css';
-import { initStore, getStore, loginUser, registerUser, getApplication } from './store.js';
+import { initStore, getStore, getApplication, restoreSession } from './store.js';
+import { supabase } from './supabaseClient.js';
 import { renderLanding } from './pages/landing.js';
 import { renderLogin, renderRegister } from './pages/auth.js';
 import { renderApply } from './pages/apply.js';
@@ -8,10 +9,19 @@ import { renderInternDashboard } from './pages/intern.js';
 import { renderHRDashboard } from './pages/hr.js';
 
 // App State
-const storeReady = initStore();
+const storeReady = (async () => {
+  await initStore();
+  const restored = await restoreSession();
+  if (restored) {
+    window.APP.user = restored;
+    sessionStorage.setItem('prime_user', JSON.stringify(restored));
+  } else {
+    sessionStorage.removeItem('prime_user');
+  }
+})();
 
 window.APP = {
-  user: JSON.parse(sessionStorage.getItem('prime_user') || 'null'),
+  user: null,
   navigate(hash) { window.location.hash = hash; },
   login(user) {
     this.user = user;
@@ -22,9 +32,10 @@ window.APP = {
     else if (app) this.navigate('#status');
     else this.navigate('#apply');
   },
-  logout() {
+  async logout() {
     this.user = null;
     sessionStorage.removeItem('prime_user');
+    await supabase.auth.signOut();
     this.navigate('#landing');
   },
   render() { void route(); }
