@@ -7,7 +7,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DEFAULT_INPUT = path.resolve(__dirname, '..', 'seed', 'store.json');
-const inputPath = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_INPUT;
+const args = process.argv.slice(2);
+let inputPath = DEFAULT_INPUT;
+let mode = 'upsert';
 
 const EXPECTED_TABLES = [
   'hr_users',
@@ -21,6 +23,37 @@ const EXPECTED_TABLES = [
   'dept_slots',
   'quarter_settings',
 ];
+
+const SEED_MODES = new Set(['upsert', 'truncate']);
+const CONFLICT_RULES = {
+  hr_users: { columns: ['id'], action: 'nothing' },
+  users: { columns: ['id'], action: 'nothing' },
+  applications: { columns: ['id'], action: 'nothing' },
+  dtr_entries: { columns: ['id'], action: 'nothing' },
+  school_activities: { columns: ['id'], action: 'nothing' },
+  messages: { columns: ['id'], action: 'nothing' },
+  email_templates: { columns: ['id'], action: 'nothing' },
+  company_documents: { columns: ['id'], action: 'nothing' },
+  dept_slots: { columns: ['department'], action: 'update', updateColumns: ['slots'] },
+  quarter_settings: { columns: ['id'], action: 'update', updateColumns: ['current'] },
+};
+
+for (const arg of args) {
+  if (arg === '--truncate') {
+    mode = 'truncate';
+  } else if (arg === '--upsert') {
+    mode = 'upsert';
+  } else if (arg.startsWith('--mode=')) {
+    mode = arg.slice('--mode='.length);
+  } else if (!arg.startsWith('--')) {
+    inputPath = path.resolve(arg);
+  }
+}
+
+if (!SEED_MODES.has(mode)) {
+  console.error(`Unknown seed mode: ${mode}. Use --mode=upsert or --mode=truncate.`);
+  process.exit(1);
+}
 
 async function loadJson(filePath) {
   const raw = await fs.readFile(filePath, 'utf8');
@@ -69,24 +102,39 @@ function pickColumns(row, allowed) {
   return output;
 }
 
-async function insertRow(client, table, row) {
+async function insertRow(client, table, row, options = {}) {
   const columns = Object.keys(row);
   if (!columns.length) return;
   const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
   const values = columns.map(column => row[column]);
-  const text = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+  let text = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+  const conflict = options.onConflict;
+  if (conflict && conflict.columns && conflict.columns.length) {
+    text += ` ON CONFLICT (${conflict.columns.join(', ')})`;
+    if (conflict.action === 'update' && conflict.updateColumns && conflict.updateColumns.length) {
+      const updates = conflict.updateColumns
+        .map(column => `${column} = EXCLUDED.${column}`)
+        .join(', ');
+      text += ` DO UPDATE SET ${updates}`;
+    } else {
+      text += ' DO NOTHING';
+    }
+  }
   await client.query(text, values);
 }
 
-async function persistStore(client, payload) {
+async function persistStore(client, payload, options) {
+  const { mode: seedMode } = options;
   const data = normalizePayload(payload);
   const tables = await getExistingTables(client);
   const truncateTables = EXPECTED_TABLES.filter(name => tables.has(name));
 
   await client.query('BEGIN');
-  if (truncateTables.length) {
+  if (seedMode === 'truncate' && truncateTables.length) {
     await client.query(`TRUNCATE TABLE ${truncateTables.join(', ')} RESTART IDENTITY CASCADE`);
   }
+
+  const applyConflict = seedMode === 'upsert';
 
   const hrUsers = data.users.filter(user => user.role === 'hr');
   const regularUsers = data.users.filter(user => user.role !== 'hr');
@@ -104,7 +152,9 @@ async function persistStore(client, payload) {
         },
         hrColumns
       );
-      await insertRow(client, 'hr_users', row);
+      await insertRow(client, 'hr_users', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.hr_users : null,
+      });
     }
   } else {
     regularUsers.push(...hrUsers);
@@ -124,7 +174,9 @@ async function persistStore(client, payload) {
         },
         userColumns
       );
-      await insertRow(client, 'users', row);
+      await insertRow(client, 'users', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.users : null,
+      });
     }
   }
 
@@ -158,10 +210,13 @@ async function persistStore(client, payload) {
           interview_time: app.interviewTime,
           final_interview_date: app.finalInterviewDate,
           final_interview_time: app.finalInterviewTime,
+          is_deployed: app.isDeployed ?? false,
         },
         appColumns
       );
-      await insertRow(client, 'applications', row);
+      await insertRow(client, 'applications', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.applications : null,
+      });
     }
   }
 
@@ -179,7 +234,9 @@ async function persistStore(client, payload) {
         },
         dtrColumns
       );
-      await insertRow(client, 'dtr_entries', row);
+      await insertRow(client, 'dtr_entries', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.dtr_entries : null,
+      });
     }
   }
 
@@ -197,7 +254,9 @@ async function persistStore(client, payload) {
         },
         schoolColumns
       );
-      await insertRow(client, 'school_activities', row);
+      await insertRow(client, 'school_activities', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.school_activities : null,
+      });
     }
   }
 
@@ -214,7 +273,9 @@ async function persistStore(client, payload) {
         },
         messageColumns
       );
-      await insertRow(client, 'messages', row);
+      await insertRow(client, 'messages', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.messages : null,
+      });
     }
   }
 
@@ -230,7 +291,9 @@ async function persistStore(client, payload) {
         },
         templateColumns
       );
-      await insertRow(client, 'email_templates', row);
+      await insertRow(client, 'email_templates', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.email_templates : null,
+      });
     }
   }
 
@@ -246,7 +309,9 @@ async function persistStore(client, payload) {
         },
         companyColumns
       );
-      await insertRow(client, 'company_documents', row);
+      await insertRow(client, 'company_documents', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.company_documents : null,
+      });
     }
   }
 
@@ -260,7 +325,9 @@ async function persistStore(client, payload) {
         },
         deptColumns
       );
-      await insertRow(client, 'dept_slots', row);
+      await insertRow(client, 'dept_slots', row, {
+        onConflict: applyConflict ? CONFLICT_RULES.dept_slots : null,
+      });
     }
   }
 
@@ -268,11 +335,14 @@ async function persistStore(client, payload) {
     const quarterColumns = await getColumnSet(client, 'quarter_settings');
     const row = pickColumns(
       {
+        id: data.quarterSettings.id ?? 1,
         current: data.quarterSettings.current,
       },
       quarterColumns
     );
-    await insertRow(client, 'quarter_settings', row);
+    await insertRow(client, 'quarter_settings', row, {
+      onConflict: applyConflict ? CONFLICT_RULES.quarter_settings : null,
+    });
   }
 
   await client.query('COMMIT');
@@ -282,7 +352,7 @@ async function main() {
   const payload = await loadJson(inputPath);
   const client = await pool.connect();
   try {
-    await persistStore(client, payload);
+    await persistStore(client, payload, { mode });
     console.log(`Seeded store data from ${inputPath}`);
   } catch (error) {
     await client.query('ROLLBACK');

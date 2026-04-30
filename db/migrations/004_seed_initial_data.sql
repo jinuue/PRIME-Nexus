@@ -1,35 +1,164 @@
 -- Migration: seed initial data for users, applications, dtr_entries, school_activities, messages, email_templates, company_documents, dept_slots, quarter_settings
 
--- USERS
-INSERT INTO users (id, email, password, name, phone, role)
+-- HR USERS
+INSERT INTO hr_users (email, password, name, phone)
 VALUES
-  ('11111111-1111-1111-1111-111111111111', 'hr@example.com', 'change-me', 'HR Admin', '09170000000', 'hr'),
-  ('22222222-2222-2222-2222-222222222222', 'intern@example.com', 'change-me', 'Sample Intern', '09170000001', 'intern')
-ON CONFLICT (id) DO NOTHING;
+  ('hr@example.com', 'change-me', 'HR Admin', '09170000000')
+ON CONFLICT (email) DO UPDATE
+SET
+  password = EXCLUDED.password,
+  name = EXCLUDED.name,
+  phone = EXCLUDED.phone;
+
+-- USERS
+INSERT INTO users (email, password, name, phone, role)
+VALUES
+  ('intern@example.com', 'change-me', 'Sample Intern', '09170000001', 'intern')
+ON CONFLICT (email) DO UPDATE
+SET
+  password = EXCLUDED.password,
+  name = EXCLUDED.name,
+  phone = EXCLUDED.phone,
+  role = EXCLUDED.role;
 
 -- APPLICATIONS
-INSERT INTO applications (id, userId, name, email, phone, course, school, cvName, coverName, ojtType, hoursRequired, source, status, appliedDate, quarter, department, supervisor, schedule, startDate, interviewDate, interviewTime, finalInterviewDate, finalInterviewTime)
-VALUES
-  ('33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', 'Sample Intern', 'intern@example.com', '09170000001', 'BS Information Technology', 'Sample University', 'cv.pdf', 'portfolio.pdf', 'required', 480, 'LinkedIn', 'accepted', '2026-04-01', 'Q2-2026', 'IT', 'To be assigned', 'Mon-Fri, 8:00 AM - 5:00 PM', '2026-04-15', '2026-04-05', '10:00', '2026-04-10', '14:00')
-ON CONFLICT (id) DO NOTHING;
+WITH user_ref AS (
+  SELECT id
+  FROM users
+  WHERE email = 'intern@example.com'
+  ORDER BY created_at DESC
+  LIMIT 1
+)
+INSERT INTO applications (
+  user_id,
+  name,
+  email,
+  phone,
+  course,
+  school,
+  cv_name,
+  cover_name,
+  ojt_type,
+  hours_required,
+  source,
+  status,
+  applied_date,
+  quarter,
+  department,
+  supervisor,
+  schedule,
+  start_date,
+  company_docs,
+  school_docs
+)
+SELECT
+  user_ref.id,
+  'Sample Intern',
+  'intern@example.com',
+  '09170000001',
+  'BS Information Technology',
+  'Sample University',
+  'cv.pdf',
+  'portfolio.pdf',
+  'required',
+  480,
+  'LinkedIn',
+  'accepted',
+  '2026-04-01',
+  'Q2-2026',
+  'IT',
+  'To be assigned',
+  'Mon-Fri, 8:00 AM - 5:00 PM',
+  '2026-04-15',
+  '{"offer_letter":"submitted"}'::jsonb,
+  '[{"id":"sd_001","name":"Endorsement Letter","fileName":"endorsement.pdf","status":"submitted","signedBy":null}]'::jsonb
+FROM user_ref
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM applications
+  WHERE email = 'intern@example.com'
+    AND applied_date = '2026-04-01'
+);
 
 -- DTR ENTRIES
-INSERT INTO dtr_entries (id, appId, date, timeIn, timeOut, type)
-VALUES
-  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', '2026-04-16', '08:00', '17:00', 'work')
-ON CONFLICT (id) DO NOTHING;
+WITH app_ref AS (
+  SELECT id
+  FROM applications
+  WHERE email = 'intern@example.com'
+    AND applied_date = '2026-04-01'
+  ORDER BY created_at DESC
+  LIMIT 1
+)
+INSERT INTO dtr_entries (app_id, date, time_in, time_out, type)
+SELECT
+  app_ref.id,
+  '2026-04-16',
+  '08:00',
+  '17:00',
+  'work'
+FROM app_ref
+WHERE app_ref.id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM dtr_entries
+    WHERE app_id = app_ref.id
+      AND date = '2026-04-16'
+      AND time_in = '08:00'
+      AND time_out = '17:00'
+      AND type = 'work'
+  );
 
 -- SCHOOL ACTIVITIES
-INSERT INTO school_activities (id, appId, name, description, status, type)
-VALUES
-  ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333', 'Career Talk', 'School activity', 'approved', 'school')
-ON CONFLICT (id) DO NOTHING;
+WITH app_ref AS (
+  SELECT id
+  FROM applications
+  WHERE email = 'intern@example.com'
+    AND applied_date = '2026-04-01'
+  ORDER BY created_at DESC
+  LIMIT 1
+)
+INSERT INTO school_activities (app_id, name, description, status, type)
+SELECT
+  app_ref.id,
+  'Career Talk',
+  'School activity',
+  'approved',
+  'school'
+FROM app_ref
+WHERE app_ref.id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM school_activities
+    WHERE app_id = app_ref.id
+      AND name = 'Career Talk'
+      AND type = 'school'
+  );
 
 -- MESSAGES
-INSERT INTO messages (id, appId, "from", text, time)
-VALUES
-  ('66666666-6666-6666-6666-666666666666', '33333333-3333-3333-3333-333333333333', 'hr', 'Welcome to PRIME!', '2026-04-16T09:00:00Z')
-ON CONFLICT (id) DO NOTHING;
+WITH app_ref AS (
+  SELECT id
+  FROM applications
+  WHERE email = 'intern@example.com'
+    AND applied_date = '2026-04-01'
+  ORDER BY created_at DESC
+  LIMIT 1
+)
+INSERT INTO messages (app_id, sender, text, time)
+SELECT
+  app_ref.id,
+  'hr',
+  'Welcome to PRIME!',
+  '2026-04-16T09:00:00Z'
+FROM app_ref
+WHERE app_ref.id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM messages
+    WHERE app_id = app_ref.id
+      AND sender = 'hr'
+      AND text = 'Welcome to PRIME!'
+      AND time = '2026-04-16T09:00:00Z'
+  );
 
 -- EMAIL TEMPLATES
 INSERT INTO email_templates (id, name, subject, body)
@@ -48,9 +177,9 @@ INSERT INTO dept_slots (department, slots)
 VALUES
   ('IT', 3),
   ('HR', 1)
-ON CONFLICT (department) DO NOTHING;
+ON CONFLICT (department) DO UPDATE SET slots = EXCLUDED.slots;
 
 -- QUARTER SETTINGS
-INSERT INTO quarter_settings (current)
-VALUES ('Q2-2026')
-ON CONFLICT (current) DO NOTHING;
+INSERT INTO quarter_settings (id, current)
+VALUES (1, 'Q2-2026')
+ON CONFLICT (id) DO UPDATE SET current = EXCLUDED.current;

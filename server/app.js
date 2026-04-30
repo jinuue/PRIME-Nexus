@@ -78,6 +78,7 @@ function mapApplicationRow(app) {
     interviewTime: app.interview_time,
     finalInterviewDate: app.final_interview_date,
     finalInterviewTime: app.final_interview_time,
+    isDeployed: app.is_deployed ?? false,
   };
 }
 
@@ -330,6 +331,7 @@ app.put('/api/store', async (req, res) => {
             interview_time: app.interviewTime,
             final_interview_date: app.finalInterviewDate,
             final_interview_time: app.finalInterviewTime,
+            is_deployed: app.isDeployed ?? false,
           },
           appColumns
         );
