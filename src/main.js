@@ -102,12 +102,12 @@ export function renderNavbar(container, links = []) {
       </div>
       <div class="nav-links" style="margin-left: 1.5rem">
         ${links.map(l => {
-          let badge = '';
-          if (unreadCount > 0 && l.label === 'Dashboard') {
-            badge = `<span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.35rem;font-size:0.65rem;margin-left:6px;vertical-align:middle">${unreadCount}</span>`;
-          }
-          return `<button class="nav-link ${location.hash === l.hash ? 'active' : ''}" style="display:flex;align-items:center" onclick="location.hash='${l.hash}'"><span>${l.label}</span> ${badge}</button>`;
-        }).join('')}
+    let badge = '';
+    if (unreadCount > 0 && l.label === 'Dashboard') {
+      badge = `<span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.35rem;font-size:0.65rem;margin-left:6px;vertical-align:middle">${unreadCount}</span>`;
+    }
+    return `<button class="nav-link ${location.hash === l.hash ? 'active' : ''}" style="display:flex;align-items:center" onclick="location.hash='${l.hash}'"><span>${l.label}</span> ${badge}</button>`;
+  }).join('')}
       </div>
       <div class="nav-user" style="padding-right: 1rem">
         <div class="avatar">${initials}</div>
@@ -126,7 +126,7 @@ export function setupPhoneMask(input) {
   input.addEventListener('input', (e) => {
     let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
     if (value.length > 11) value = value.slice(0, 11);
-    
+
     let formatted = '';
     if (value.length > 0) {
       formatted = value.substring(0, 4);
