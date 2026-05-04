@@ -74,95 +74,18 @@ function buildEmptyStore() {
 async function persistStore() {
   if (!storeCache) return;
 
-  const hrUsers = storeCache.users.filter(user => user.role === 'hr');
-  const regularUsers = storeCache.users.filter(user => user.role !== 'hr');
-
-  const hrRows = hrUsers.map(user => ({
-    id: user.id,
-    email: user.email,
-    password: 'supabase-auth',
-    name: user.name,
-    phone: user.phone,
-  }));
-
-  const userRows = regularUsers.map(user => ({
-    id: user.id,
-    email: user.email,
-    password: 'supabase-auth',
-    name: user.name,
-    phone: user.phone,
-    role: user.role || 'applicant',
-  }));
-
-  const appRows = (storeCache.applications || []).map(mapApplicationToRow);
-  const dtrRows = (storeCache.dtrEntries || []).map(entry => ({
-    id: entry.id,
-    app_id: entry.appId,
-    date: entry.date,
-    time_in: entry.timeIn,
-    time_out: entry.timeOut,
-    type: entry.type,
-  }));
-  const schoolRows = (storeCache.schoolActivities || []).map(activity => ({
-    id: activity.id,
-    app_id: activity.appId,
-    name: activity.name,
-    description: activity.description,
-    status: activity.status,
-    type: activity.type,
-  }));
-  const messageRows = (storeCache.messages || []).map(mapMessageToRow);
-  const legacyRows = (storeCache.legacyInterns || []).map(entry => ({
-    id: entry.id,
-    name: entry.name,
-    email: entry.email,
-    phone: entry.phone,
-    school: entry.school,
-    department: entry.department,
-    hours: entry.hours ? parseInt(entry.hours, 10) : null,
-    period: entry.period,
-    ojt_type: entry.ojtType,
-    coc_status: entry.cocStatus,
-    dtr_file_name: entry.dtrFileName,
-    resume_file_name: entry.resumeFileName,
-    portfolio_file_name: entry.portfolioFileName,
-    added_at: entry.addedAt,
-  }));
-  const templateRows = (storeCache.emailTemplates || []).map(template => ({
-    id: template.id,
-    name: template.name,
-    subject: template.subject,
-    body: template.body,
-  }));
-  const companyRows = (storeCache.companyDocuments || []).map(doc => ({
-    id: doc.id,
-    name: doc.name,
-    description: doc.description,
-    type: doc.type,
-  }));
-  const deptRows = Object.entries(storeCache.deptSlots || {}).map(([department, slots]) => ({
-    department,
-    slots,
-  }));
-  const quarterRows = [{ id: 1, current: storeCache.quarterSettings?.current ?? null }];
-
-  const ops = [];
-  if (hrRows.length) ops.push(supabase.from('hr_users').upsert(hrRows, { onConflict: 'email' }));
-  if (userRows.length) ops.push(supabase.from('users').upsert(userRows, { onConflict: 'email' }));
-  if (appRows.length) ops.push(supabase.from('applications').upsert(appRows, { onConflict: 'id' }));
-  if (dtrRows.length) ops.push(supabase.from('dtr_entries').upsert(dtrRows, { onConflict: 'id' }));
-  if (schoolRows.length) ops.push(supabase.from('school_activities').upsert(schoolRows, { onConflict: 'id' }));
-  if (messageRows.length) ops.push(supabase.from('messages').upsert(messageRows, { onConflict: 'id' }));
-  if (legacyRows.length) ops.push(supabase.from('legacy_interns').upsert(legacyRows, { onConflict: 'id' }));
-  if (templateRows.length) ops.push(supabase.from('email_templates').upsert(templateRows, { onConflict: 'id' }));
-  if (companyRows.length) ops.push(supabase.from('company_documents').upsert(companyRows, { onConflict: 'id' }));
-  if (deptRows.length) ops.push(supabase.from('dept_slots').upsert(deptRows, { onConflict: 'department' }));
-  ops.push(supabase.from('quarter_settings').upsert(quarterRows, { onConflict: 'id' }));
-
-  const results = await Promise.all(ops);
-  const errors = results.map(res => res.error).filter(Boolean);
-  if (errors.length) {
-    console.warn('Failed to persist store data.', errors[0]);
+  try {
+    const response = await fetch('/api/store', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(storeCache),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      console.warn('Failed to persist store data.', error);
+    }
+  } catch (error) {
+    console.warn('Network error while persisting store data.', error);
   }
 }
 
@@ -176,7 +99,9 @@ export async function initStore(force = false) {
   if (initPromise && !force) return initPromise;
   initPromise = (async () => {
     try {
-      storeCache = await fetchStoreFromSupabase();
+      const response = await fetch('/api/store');
+      if (!response.ok) throw new Error('API fetch failed');
+      storeCache = await response.json();
     } catch (error) {
       console.warn('Failed to load store data from Supabase.', error);
       storeCache = buildEmptyStore();

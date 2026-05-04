@@ -35,7 +35,6 @@ window.APP = {
   async logout() {
     this.user = null;
     sessionStorage.removeItem('prime_user');
-    await supabase.auth.signOut();
     this.navigate('#landing');
   },
   render() { void route(); }
