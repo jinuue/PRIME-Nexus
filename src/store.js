@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js';
+// Local API driven store
 
 let storeCache = null;
 let initPromise = null;
@@ -103,7 +103,7 @@ export async function initStore(force = false) {
       if (!response.ok) throw new Error('API fetch failed');
       storeCache = await response.json();
     } catch (error) {
-      console.warn('Failed to load store data from Supabase.', error);
+      console.warn('Failed to load store data from database.', error);
       storeCache = buildEmptyStore();
     }
     return storeCache;
@@ -132,10 +132,10 @@ export function resetStore() {
 export function loginUser(email, password, role) {
   const data = getStore();
   const user = data.users.find(u => u.email === email && u.password === password);
-  if (!user) return null;
-  if (role === 'hr' && user.role !== 'hr') return null;
-  if (role === 'intern' && user.role === 'hr') return null;
-  return user;
+  if (!user) return { error: { message: 'Invalid email or password' } };
+  if (role === 'hr' && user.role !== 'hr') return { error: { message: 'Access denied. HR credentials required.' } };
+  if (role === 'intern' && user.role === 'hr') return { error: { message: 'Access denied.' } };
+  return { user };
 }
 
 export function registerUser({ name, email, password, phone }) {

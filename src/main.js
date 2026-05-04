@@ -1,6 +1,5 @@
 import './style.css';
-import { initStore, getStore, getApplication, restoreSession } from './store.js';
-import { supabase } from './supabaseClient.js';
+import { initStore, getStore, getApplication } from './store.js';
 import { renderLanding } from './pages/landing.js';
 import { renderLogin, renderRegister } from './pages/auth.js';
 import { renderApply } from './pages/apply.js';
@@ -11,12 +10,9 @@ import { renderHRDashboard } from './pages/hr.js';
 // App State
 const storeReady = (async () => {
   await initStore();
-  const restored = await restoreSession();
-  if (restored) {
-    window.APP.user = restored;
-    sessionStorage.setItem('prime_user', JSON.stringify(restored));
-  } else {
-    sessionStorage.removeItem('prime_user');
+  const restoredUser = sessionStorage.getItem('prime_user');
+  if (restoredUser) {
+    window.APP.user = JSON.parse(restoredUser);
   }
 })();
 
