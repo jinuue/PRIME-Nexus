@@ -1,24 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+import { supabase } from './supabaseClient.js';
 
 let storeCache = null;
 let initPromise = null;
-
-async function apiFetch(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
-
-  if (response.status === 204) return null;
-  return response.json();
-}
+let persistChain = Promise.resolve();
 
 function makeId(prefix) {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -27,27 +11,42 @@ function makeId(prefix) {
   return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 }
 
+export const DEPARTMENTS = [
+  'Marketing',
+  'IT / Development',
+  'Human Resources',
+  'Finance',
+  'Operations',
+  'Legal',
+  'Creative / Design',
+  'Admin Support',
+];
+
+export const COMPANY_DOCUMENTS = [];
+export const EMAIL_TEMPLATES = [];
+
+const DEFAULT_DEPT_SLOTS = {
+  'Marketing': 5,
+  'IT / Development': 3,
+  'Human Resources': 4,
+  'Finance': 2,
+  'Operations': 5,
+  'Legal': 1,
+  'Creative / Design': 3,
+  'Admin Support': 4,
+};
+
 const EMPTY_STORE = {
   users: [],
   applications: [],
   dtrEntries: [],
   schoolActivities: [],
   messages: [],
-  // Merge all fields from both branches
-  emailTemplates: typeof EMAIL_TEMPLATES !== 'undefined' ? [...EMAIL_TEMPLATES] : [],
-  companyDocuments: [],
-  deptSlots: {
-    'Marketing': 5,
-    'IT / Development': 3,
-    'Human Resources': 4,
-    'Finance': 2,
-    'Operations': 5,
-    'Legal': 1,
-    'Creative / Design': 3,
-    'Admin Support': 4
-  },
+  emailTemplates: [...EMAIL_TEMPLATES],
+  companyDocuments: [...COMPANY_DOCUMENTS],
+  deptSlots: { ...DEFAULT_DEPT_SLOTS },
   quarterSettings: { current: 'Q2-2026' },
-  legacyInterns: []
+  legacyInterns: [],
 };
 
 function normalizeStore(data) {
@@ -74,24 +73,112 @@ function buildEmptyStore() {
 
 async function persistStore() {
   if (!storeCache) return;
-  try {
-    await apiFetch('/api/store', {
-      method: 'PUT',
-      body: JSON.stringify(storeCache),
-    });
-  } catch (error) {
-    console.warn('Failed to persist store data.', error);
+
+  const hrUsers = storeCache.users.filter(user => user.role === 'hr');
+  const regularUsers = storeCache.users.filter(user => user.role !== 'hr');
+
+  const hrRows = hrUsers.map(user => ({
+    id: user.id,
+    email: user.email,
+    password: 'supabase-auth',
+    name: user.name,
+    phone: user.phone,
+  }));
+
+  const userRows = regularUsers.map(user => ({
+    id: user.id,
+    email: user.email,
+    password: 'supabase-auth',
+    name: user.name,
+    phone: user.phone,
+    role: user.role || 'applicant',
+  }));
+
+  const appRows = (storeCache.applications || []).map(mapApplicationToRow);
+  const dtrRows = (storeCache.dtrEntries || []).map(entry => ({
+    id: entry.id,
+    app_id: entry.appId,
+    date: entry.date,
+    time_in: entry.timeIn,
+    time_out: entry.timeOut,
+    type: entry.type,
+  }));
+  const schoolRows = (storeCache.schoolActivities || []).map(activity => ({
+    id: activity.id,
+    app_id: activity.appId,
+    name: activity.name,
+    description: activity.description,
+    status: activity.status,
+    type: activity.type,
+  }));
+  const messageRows = (storeCache.messages || []).map(mapMessageToRow);
+  const legacyRows = (storeCache.legacyInterns || []).map(entry => ({
+    id: entry.id,
+    name: entry.name,
+    email: entry.email,
+    phone: entry.phone,
+    school: entry.school,
+    department: entry.department,
+    hours: entry.hours ? parseInt(entry.hours, 10) : null,
+    period: entry.period,
+    ojt_type: entry.ojtType,
+    coc_status: entry.cocStatus,
+    dtr_file_name: entry.dtrFileName,
+    resume_file_name: entry.resumeFileName,
+    portfolio_file_name: entry.portfolioFileName,
+    added_at: entry.addedAt,
+  }));
+  const templateRows = (storeCache.emailTemplates || []).map(template => ({
+    id: template.id,
+    name: template.name,
+    subject: template.subject,
+    body: template.body,
+  }));
+  const companyRows = (storeCache.companyDocuments || []).map(doc => ({
+    id: doc.id,
+    name: doc.name,
+    description: doc.description,
+    type: doc.type,
+  }));
+  const deptRows = Object.entries(storeCache.deptSlots || {}).map(([department, slots]) => ({
+    department,
+    slots,
+  }));
+  const quarterRows = [{ id: 1, current: storeCache.quarterSettings?.current ?? null }];
+
+  const ops = [];
+  if (hrRows.length) ops.push(supabase.from('hr_users').upsert(hrRows, { onConflict: 'email' }));
+  if (userRows.length) ops.push(supabase.from('users').upsert(userRows, { onConflict: 'email' }));
+  if (appRows.length) ops.push(supabase.from('applications').upsert(appRows, { onConflict: 'id' }));
+  if (dtrRows.length) ops.push(supabase.from('dtr_entries').upsert(dtrRows, { onConflict: 'id' }));
+  if (schoolRows.length) ops.push(supabase.from('school_activities').upsert(schoolRows, { onConflict: 'id' }));
+  if (messageRows.length) ops.push(supabase.from('messages').upsert(messageRows, { onConflict: 'id' }));
+  if (legacyRows.length) ops.push(supabase.from('legacy_interns').upsert(legacyRows, { onConflict: 'id' }));
+  if (templateRows.length) ops.push(supabase.from('email_templates').upsert(templateRows, { onConflict: 'id' }));
+  if (companyRows.length) ops.push(supabase.from('company_documents').upsert(companyRows, { onConflict: 'id' }));
+  if (deptRows.length) ops.push(supabase.from('dept_slots').upsert(deptRows, { onConflict: 'department' }));
+  ops.push(supabase.from('quarter_settings').upsert(quarterRows, { onConflict: 'id' }));
+
+  const results = await Promise.all(ops);
+  const errors = results.map(res => res.error).filter(Boolean);
+  if (errors.length) {
+    console.warn('Failed to persist store data.', errors[0]);
   }
 }
 
-export async function initStore() {
-  if (initPromise) return initPromise;
+function queuePersist() {
+  persistChain = persistChain.then(() => persistStore()).catch(error => {
+    console.warn('Store persistence failed.', error);
+  });
+}
+
+export async function initStore(force = false) {
+  if (initPromise && !force) return initPromise;
   initPromise = (async () => {
     try {
-      const remote = await apiFetch('/api/store');
-      storeCache = normalizeStore(remote);
+      storeCache = await fetchStoreFromSupabase();
     } catch (error) {
-      console.warn('Failed to load store data.', error);
+      console.warn('Failed to load store data from Supabase.', error);
       storeCache = buildEmptyStore();
     }
     return storeCache;
@@ -108,7 +195,11 @@ export function getStore() {
 
 export function saveStore(data) {
   storeCache = normalizeStore(data);
-  void persistStore();
+  queuePersist();
+}
+
+export function resetStore() {
+  storeCache = buildEmptyStore();
   return storeCache;
 }
 
@@ -222,10 +313,22 @@ export function getMessages(appId) {
 
 export function sendMessage(appId, from, text) {
   const data = getStore();
-  const msg = { id: makeId('msg'), appId, from, text, time: new Date().toLocaleString() };
+  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString() };
   data.messages.push(msg);
   saveStore(data);
   return msg;
+}
+
+export function markMessagesAsRead(appId, readByRole) {
+  const data = getStore();
+  let changed = false;
+  data.messages.forEach(m => {
+    if (m.appId === appId && m.from !== readByRole && !m.read) {
+      m.read = true;
+      changed = true;
+    }
+  });
+  if (changed) saveStore(data);
 }
 
 // Document helpers
@@ -253,6 +356,32 @@ export function signSchoolDoc(appId, docId, signerName) {
   if (!app) return;
   const doc = (app.schoolDocs || []).find(d => d.id === docId);
   if (doc) { doc.status = 'signed'; doc.signedBy = signerName; }
+  saveStore(data);
+}
+
+export function saveEmailTemplate(template) {
+  const data = getStore();
+  const emailTemplates = Array.isArray(data.emailTemplates) ? data.emailTemplates : [];
+  const entry = {
+    id: template.id || makeId('tmpl'),
+    name: template.name,
+    subject: template.subject,
+    body: template.body,
+  };
+  const existingIndex = emailTemplates.findIndex(t => t.id === entry.id);
+  if (existingIndex >= 0) {
+    emailTemplates[existingIndex] = entry;
+  } else {
+    emailTemplates.push(entry);
+  }
+  data.emailTemplates = emailTemplates;
+  saveStore(data);
+  return entry;
+}
+
+export function deleteEmailTemplate(templateId) {
+  const data = getStore();
+  data.emailTemplates = (data.emailTemplates || []).filter(t => t.id !== templateId);
   saveStore(data);
 }
 
@@ -318,5 +447,8 @@ export function getDepartments() {
 
 export function getCompanyDocuments() {
   const data = getStore();
-  return Array.isArray(data.companyDocuments) ? data.companyDocuments : [];
+  return (data.companyDocuments || []).map(doc => ({
+    ...doc,
+    desc: doc.desc || doc.description || '',
+  }));
 }
