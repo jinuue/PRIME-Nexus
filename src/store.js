@@ -73,6 +73,7 @@ const SEED_DATA = {
   messages: [],
   quarterSettings: { current: 'Q2-2026' },
   emailTemplates: [...EMAIL_TEMPLATES],
+  companyDocuments: [...COMPANY_DOCUMENTS],
   deptSlots: {
     'Marketing': 5,
     'IT / Development': 3,
@@ -126,6 +127,7 @@ export function getStore() {
     // Migration: ensure emailTemplates and deptSlots exist in old storage
     if (!data.emailTemplates) data.emailTemplates = [...EMAIL_TEMPLATES];
     if (!data.deptSlots) data.deptSlots = { ...SEED_DATA.deptSlots };
+    if (!data.companyDocuments) data.companyDocuments = [...COMPANY_DOCUMENTS];
 
     // Migration: ensure ALL supervisor test accounts exist in old storage
     let changed = false;
@@ -428,4 +430,16 @@ export function getCompanyDocuments() {
     ...doc,
     desc: doc.desc || doc.description || '',
   }));
+}
+
+export function addCompanyDocument(doc) {
+  const data = getStore();
+  if (!data.companyDocuments) data.companyDocuments = [...COMPANY_DOCUMENTS];
+  const newDoc = {
+    id: makeId('cdoc'),
+    ...doc
+  };
+  data.companyDocuments.push(newDoc);
+  saveStore(data);
+  return newDoc;
 }

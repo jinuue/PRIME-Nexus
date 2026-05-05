@@ -199,18 +199,67 @@ function renderDocuments(el, app) {
       const status = companyDocs[doc.id] || 'pending';
       const badgeClass = status === 'signed' ? 'badge-green' : status === 'submitted' ? 'badge-blue' : 'badge-gray';
       const badgeText = status === 'signed' ? '<i data-lucide="check-circle" style="width:12px;height:12px"></i> Signed' : status === 'submitted' ? '<i data-lucide="upload" style="width:12px;height:12px"></i> Submitted' : '<i data-lucide="clock" style="width:12px;height:12px"></i> Pending';
+      
+      let actionBtn = '';
+      if (status === 'pending') {
+        if (doc.type === 'sign') {
+          actionBtn = `<button class="btn btn-primary btn-sm btn-sign-company" data-docid="${doc.id}" style="font-size:0.7rem">Sign Document</button>`;
+        } else {
+          actionBtn = `
+            <div class="flex" style="gap:0.5rem">
+              <input type="file" id="file-${doc.id}" style="display:none" onchange="window.handleCompanyUpload('${doc.id}')" />
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('file-${doc.id}').click()" style="font-size:0.7rem">Upload File</button>
+            </div>
+          `;
+        }
+      }
+
       html += `
         <div class="doc-item">
-          <div>
-            <div class="doc-name">${doc.name}</div>
-            <div class="doc-desc">${doc.desc}</div>
+          <div style="flex:1">
+            <div class="doc-name">
+              ${doc.name}
+              ${doc.templateName ? `<span style="font-weight:400;font-size:0.7rem;color:var(--accent-blue);margin-left:8px;cursor:pointer" onclick="alert('Downloading: ${doc.templateName}')"><i data-lucide="download" style="width:12px;height:12px"></i> Template</span>` : ''}
+            </div>
+            <div class="doc-desc">${doc.desc || ''}</div>
+            <div class="mt-1"><span class="badge ${badgeClass}">${badgeText}</span></div>
           </div>
-          <span class="badge ${badgeClass}">${badgeText}</span>
+          <div class="doc-action">${actionBtn}</div>
         </div>
       `;
     });
     html += '</div>';
     docContent.innerHTML = html;
+
+    docContent.querySelectorAll('.btn-sign-company').forEach(btn => {
+      btn.onclick = () => {
+        const docId = btn.dataset.docid;
+        if (confirm('Do you acknowledge and sign this document?')) {
+          const store = getStore();
+          const currentApp = store.applications.find(a => a.id === app.id);
+          if (currentApp) {
+            if (!currentApp.companyDocs) currentApp.companyDocs = {};
+            currentApp.companyDocs[docId] = 'signed';
+            saveStore(store);
+            renderInternDashboard(document.getElementById('app'));
+          }
+        }
+      };
+    });
+
+    window.handleCompanyUpload = (docId) => {
+      const file = document.getElementById(`file-${docId}`).files[0];
+      if (file) {
+        const store = getStore();
+        const currentApp = store.applications.find(a => a.id === app.id);
+        if (currentApp) {
+          if (!currentApp.companyDocs) currentApp.companyDocs = {};
+          currentApp.companyDocs[docId] = 'submitted';
+          saveStore(store);
+          renderInternDashboard(document.getElementById('app'));
+        }
+      }
+    };
   }
 
   function renderSchoolDocs() {
