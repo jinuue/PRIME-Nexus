@@ -23,6 +23,8 @@ export function renderHRDashboard(container) {
       items: [
         { key: 'applications', icon: '<i data-lucide="clipboard-list" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Applications' },
         { key: 'masterlist_applicants', icon: '<i data-lucide="users" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Applicants List' },
+        { key: 'applications', icon: '<i data-lucide="clipboard-list"></i>', label: 'Applications' },
+        { key: 'masterlist_applicants', icon: '<i data-lucide="users"></i>', label: 'Applicants List' },
       ]
     },
     {
@@ -31,6 +33,9 @@ export function renderHRDashboard(container) {
         { key: 'masterlist_interns', icon: '<i data-lucide="graduation-cap" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Deployed Interns' },
         { key: 'docs', icon: '<i data-lucide="file-check-2" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Document Tracking' },
         { key: 'dtr', icon: '<i data-lucide="clock" style="width:18px;height:18px;margin-right:8px"></i>', label: 'DTR Access' },
+        { key: 'masterlist_interns', icon: '<i data-lucide="graduation-cap"></i>', label: 'Deployed Interns' },
+        { key: 'docs', icon: '<i data-lucide="file-text"></i>', label: 'Document Tracking' },
+        { key: 'dtr', icon: '<i data-lucide="clock"></i>', label: 'DTR Access' },
       ]
     },
     {
@@ -39,6 +44,8 @@ export function renderHRDashboard(container) {
         { key: 'email', icon: '<i data-lucide="mail" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Email Templates' },
         { key: 'messages', icon: '<i data-lucide="message-square" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Intern Messages' },
         { key: 'sup_messages', icon: '<i data-lucide="message-circle" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Supervisor Messages' },
+        { key: 'email', icon: '<i data-lucide="mail"></i>', label: 'Email Templates' },
+        { key: 'messages', icon: '<i data-lucide="message-square"></i>', label: 'Communications' },
       ]
     },
     {
@@ -46,6 +53,8 @@ export function renderHRDashboard(container) {
       items: [
         { key: 'historical', icon: '<i data-lucide="archive" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Historical Records' },
         { key: 'analytics', icon: '<i data-lucide="bar-chart-2" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Analytics' },
+        { key: 'historical', icon: '<i data-lucide="folder-open"></i>', label: 'Historical Records' },
+        { key: 'analytics', icon: '<i data-lucide="bar-chart-2"></i>', label: 'Analytics' },
       ]
     }
   ];

@@ -15,6 +15,87 @@ const distPath = path.resolve(__dirname, '../dist');
 app.use(express.static(distPath));
 // ...existing code...
 
+
+// --- AUTH & USER ENDPOINTS ---
+let bcrypt;
+try { bcrypt = require('bcryptjs'); } catch { bcrypt = null; }
+
+// Register user
+app.post('/api/register', async (req, res) => {
+  const { name, email, password, phone } = req.body || {};
+  if (!name || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    // Check if user exists
+    const exists = await client.query('SELECT 1 FROM users WHERE email = $1', [email]);
+    if (exists.rowCount > 0) return res.status(409).json({ error: 'Email already registered' });
+    // Hash password (optional: use bcrypt if available)
+    let hashed = password;
+    if (bcrypt) hashed = await bcrypt.hash(password, 10);
+    // Insert user
+    const result = await client.query(
+      'INSERT INTO users (id, email, password, name, phone, role) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING id, email, name, phone, role',
+      [email, hashed, name, phone, 'applicant']
+    );
+    res.json({ user: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Registration failed' });
+  } finally {
+    client.release();
+  }
+});
+
+// Login user
+app.post('/api/login', async (req, res) => {
+  const { email, password, role } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT id, email, password, name, phone, role FROM users WHERE email = $1', [email]);
+    if (result.rowCount === 0) return res.status(401).json({ error: 'Invalid email or password' });
+    const user = result.rows[0];
+    let valid = false;
+    if (bcrypt) valid = await bcrypt.compare(password, user.password);
+    else valid = user.password === password;
+    if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+    if (role && user.role !== role && !(role === 'intern' && user.role === 'applicant')) return res.status(403).json({ error: 'Access denied for this role' });
+    delete user.password;
+    res.json({ user });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Login failed' });
+  } finally {
+    client.release();
+  }
+});
+
+// Submit application
+app.post('/api/applications', async (req, res) => {
+  const { userId, name, email, phone, course, school, ojtType, hoursRequired, source, schedule, department } = req.body || {};
+  if (!userId || !name || !email) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    // Check if already applied
+    const exists = await client.query('SELECT 1 FROM applications WHERE user_id = $1', [userId]);
+    if (exists.rowCount > 0) return res.status(409).json({ error: 'Already applied' });
+    const now = new Date();
+    const appliedDate = now.toISOString().split('T')[0];
+    const result = await client.query(
+      `INSERT INTO applications (id, user_id, name, email, phone, course, school, ojt_type, hours_required, source, status, applied_date, quarter, department, schedule, is_deployed, company_docs, school_docs)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, 'submitted', $10, $11, $12, $13, false, '{}'::jsonb, '[]'::jsonb)
+       RETURNING id, user_id, name, email, phone, course, school, ojt_type, hours_required, source, status, applied_date, quarter, department, schedule, is_deployed`,
+      [userId, name, email, phone, course, school, ojtType, hoursRequired, source, appliedDate, req.body.quarter || '', department, schedule]
+    );
+    res.json({ application: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Application failed' });
+  } finally {
+    client.release();
+  }
+});
+
 // Catch-all: serve index.html for any non-API route (SPA support)
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) return res.status(404).json({ error: 'API route not found' });

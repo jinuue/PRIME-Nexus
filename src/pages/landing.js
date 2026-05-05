@@ -8,14 +8,11 @@ export function renderLanding(container) {
       <h1>Internship Management System</h1>
       <p>Apply, track your application status, and manage your internship journey all in one place.</p>
       <div class="landing-buttons">
-        <button class="btn btn-yellow" style="padding: 1.25rem 3rem; font-size: 1.25rem; border-radius: 16px; display: flex; align-items: center; gap: 0.75rem;" onclick="location.hash='#login'" id="btn-intern-portal">
-          <i data-lucide="clipboard-list" style="width:24px;height:24px"></i> Intern Portal
+        <button class="btn btn-yellow" style="padding: 1.25rem 3rem; font-size: 1.25rem; border-radius: 16px" onclick="location.hash='#login'" id="btn-intern-portal">
+          📋 Intern Portal
         </button>
-        <button class="btn btn-landing-secondary" style="display: flex; align-items: center; gap: 0.5rem;" onclick="location.hash='#login-hr'" id="btn-hr-portal">
-          <i data-lucide="shield-check" style="width:18px;height:18px"></i> HR Administration
-        </button>
-        <button class="btn btn-landing-secondary" style="display: flex; align-items: center; gap: 0.5rem;" onclick="location.hash='#login-supervisor'" id="btn-supervisor-portal">
-          <i data-lucide="users" style="width:18px;height:18px"></i> Supervisor Portal
+        <button class="btn btn-landing-secondary" onclick="location.hash='#login-hr'" id="btn-hr-portal">
+          🔐 HR Administration
         </button>
       </div>
 
