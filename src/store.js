@@ -176,10 +176,21 @@ export function loginUser(email, password, role) {
 export function registerUser({ name, email, password, phone }) {
   const data = getStore();
   if (data.users.find(u => u.email === email)) return { error: 'Email already registered' };
-  const user = { id: makeId('user'), email, password, name, phone, role: 'applicant' };
+  const user = { id: makeId('user'), email, password, name, phone, role: 'applicant', avatar: null };
   data.users.push(user);
   saveStore(data);
   return { user };
+}
+
+export function updateUser(userId, updates) {
+  const data = getStore();
+  const user = data.users.find(u => u.id === userId);
+  if (user) {
+    Object.assign(user, updates);
+    saveStore(data);
+    return user;
+  }
+  return null;
 }
 
 // Application helpers

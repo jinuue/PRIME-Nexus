@@ -40,12 +40,12 @@ export function renderLanding(container) {
             <div class="dev-card" style="border-color: var(--accent-blue);">
               <div class="dev-avatar" style="background: rgba(0, 112, 243, 0.1); color: var(--accent-blue);"><i data-lucide="database"></i></div>
               <h3>Michael Baynosa</h3>
-              <p>Lead Backend Developer</p>
+              <p>IT Intern / Lead Backend Developer</p>
             </div>
             <div class="dev-card" style="border-color: var(--accent-blue);">
               <div class="dev-avatar" style="background: rgba(0, 112, 243, 0.1); color: var(--accent-blue);"><i data-lucide="layout"></i></div>
               <h3>Sarah Grace Guiling</h3>
-              <p>Lead Frontend Developer</p>
+              <p>IT Intern / Lead Frontend Developer</p>
             </div>
             <div class="dev-card" style="border-color: var(--accent-blue);">
               <div class="dev-avatar"><i data-lucide="code-2"></i></div>
@@ -82,12 +82,12 @@ export function renderLanding(container) {
             <div class="dev-card" style="border-color: var(--accent-blue);">
               <div class="dev-avatar" style="background: rgba(0, 112, 243, 0.1); color: var(--accent-blue);"><i data-lucide="database"></i></div>
               <h3>Michael Baynosa</h3>
-              <p>Lead Backend Developer</p>
+              <p>IT Intern / Lead Backend Developer</p>
             </div>
             <div class="dev-card" style="border-color: var(--accent-blue);">
               <div class="dev-avatar" style="background: rgba(0, 112, 243, 0.1); color: var(--accent-blue);"><i data-lucide="layout"></i></div>
               <h3>Sarah Grace Guiling</h3>
-              <p>Lead Frontend Developer</p>
+              <p>IT Intern / Lead Frontend Developer</p>
             </div>
             <div class="dev-card" style="border-color: var(--accent-blue);">
               <div class="dev-avatar"><i data-lucide="code-2"></i></div>

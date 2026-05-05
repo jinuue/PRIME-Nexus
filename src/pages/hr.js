@@ -526,6 +526,15 @@ function renderApplications(el, apps, data) {
       ).join('');
 
       const deptOptions = departments.map(d => `<option value="${d}" ${a.department === d ? 'selected' : ''}>${d}</option>`).join('');
+      
+      const store = getStore();
+      const allowedRoles = a.status === 'initial_interview' ? ['hr'] : ['hr', 'supervisor'];
+      const staff = (store.users || []).filter(u => allowedRoles.includes(u.role)).map(u => u.name);
+      const currentInterviewer = a.status === 'final_interview' ? (a.finalInterviewedBy || '') : (a.interviewedBy || '');
+      const interviewerOptions = ['Select Interviewer', ...staff].map(name => {
+        const val = name === 'Select Interviewer' ? '' : name;
+        return `<option value="${val}" ${currentInterviewer === val ? 'selected' : ''}>${name}</option>`;
+      }).join('');
 
       return `<tr>
         <td>
@@ -557,8 +566,13 @@ function renderApplications(el, apps, data) {
         </td>
         <td>
           ${!isWithdrawn && ['initial_interview', 'final_interview'].includes(a.status) ? `
-            <input type="date" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem;margin-bottom:0.25rem" data-appid="${a.id}" data-field="interviewDate" value="${a.status === 'final_interview' ? (a.finalInterviewDate || '') : (a.interviewDate || '')}" />
-            <input type="time" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewTime" value="${a.status === 'final_interview' ? (a.finalInterviewTime || '') : (a.interviewTime || '')}" />
+            <div style="display:flex; flex-direction:column; gap:0.25rem; max-width:140px;">
+              <input type="date" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewDate" value="${a.status === 'final_interview' ? (a.finalInterviewDate || '') : (a.interviewDate || '')}" />
+              <input type="time" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewTime" value="${a.status === 'final_interview' ? (a.finalInterviewTime || '') : (a.interviewTime || '')}" />
+              <select class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewedBy">
+                ${interviewerOptions}
+              </select>
+            </div>
           ` : a.status === 'accepted' ? `
             ${a.isDeployed
             ? '<span class="badge badge-green"><i class="fi fi-rs-rocket-lunch" style="margin-right:4px"></i> DEPLOYED</span>'
@@ -616,13 +630,18 @@ function attachAppListeners(container, data) {
     };
   });
 
-  container.querySelectorAll('input[data-field="interviewDate"],input[data-field="interviewTime"]').forEach(inp => {
+  container.querySelectorAll('input[data-field="interviewDate"],input[data-field="interviewTime"],select[data-field="interviewedBy"]').forEach(inp => {
     inp.onchange = () => {
       const store = getStore();
       const app = store.applications.find(a => a.id === inp.dataset.appid);
       if (app) {
         if (app.status === 'final_interview') {
-          app[inp.dataset.field === 'interviewDate' ? 'finalInterviewDate' : 'finalInterviewTime'] = inp.value;
+          const fieldMap = {
+            interviewDate: 'finalInterviewDate',
+            interviewTime: 'finalInterviewTime',
+            interviewedBy: 'finalInterviewedBy'
+          };
+          app[fieldMap[inp.dataset.field] || inp.dataset.field] = inp.value;
         } else {
           app[inp.dataset.field] = inp.value;
         }
