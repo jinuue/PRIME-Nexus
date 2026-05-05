@@ -29,6 +29,36 @@ create table if not exists users (
 );
 
 alter table if exists applications
+  drop constraint if exists applications_user_id_fkey;
+
+alter table if exists users
+  alter column id type text using id::text,
+  alter column id set default (
+    to_char(current_date, 'YY') || lpad(nextval('user_id_seq')::text, 3, '0')
+  );
+
+insert into hr_users (id, email, password, name, phone, created_by, created_at)
+select u.id::text, u.email, u.password, u.name, u.phone, u.created_by, u.created_at
+from users u
+where u.role = 'hr'
+on conflict (email) do nothing;
+
+delete from users where role = 'hr';
+
+alter table if exists users
+  drop constraint if exists users_role_check;
+
+alter table if exists users
+  add constraint users_role_check check (role in ('intern', 'applicant'));
+
+alter table if exists applications
+  alter column user_id type text using user_id::text;
+
+alter table if exists applications
+  add constraint applications_user_id_fkey
+  foreign key (user_id) references users(id) on delete cascade;
+
+alter table if exists applications
   add column if not exists created_by text,
   add column if not exists created_at timestamptz not null default now();
 
@@ -60,5 +90,5 @@ alter table if exists quarter_settings
   add column if not exists created_by text,
   add column if not exists created_at timestamptz not null default now();
 
--- Note: If the original users table already exists with uuid IDs, this migration
--- does not move data. Add a dedicated data migration if needed.
+-- Note: This migration converts existing UUID user IDs to text and moves HR users
+-- into the hr_users table so the schema aligns with the custom-ID setup.

@@ -1,5 +1,5 @@
 import './style.css';
-import { getStore, loginUser, registerUser, resetStore, getApplication } from './store.js';
+import { initStore, getStore, getApplication } from './store.js';
 import { renderLanding } from './pages/landing.js';
 import { renderLogin, renderRegister } from './pages/auth.js';
 import { renderApply } from './pages/apply.js';
@@ -8,8 +8,16 @@ import { renderInternDashboard } from './pages/intern.js';
 import { renderHRDashboard } from './pages/hr.js';
 
 // App State
+const storeReady = (async () => {
+  await initStore();
+  const restoredUser = sessionStorage.getItem('prime_user');
+  if (restoredUser) {
+    window.APP.user = JSON.parse(restoredUser);
+  }
+})();
+
 window.APP = {
-  user: JSON.parse(sessionStorage.getItem('prime_user') || 'null'),
+  user: null,
   navigate(hash) { window.location.hash = hash; },
   login(user) {
     this.user = user;
@@ -21,16 +29,17 @@ window.APP = {
     else if (app) this.navigate('#status');
     else this.navigate('#apply');
   },
-  logout() {
+  async logout() {
     this.user = null;
     sessionStorage.removeItem('prime_user');
     this.navigate('#landing');
   },
-  render() { route(); }
+  render() { void route(); }
 };
 
 // Router
-function route() {
+async function route() {
+  await storeReady;
   const hash = window.location.hash || '#landing';
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -74,8 +83,8 @@ function route() {
   }
 }
 
-window.addEventListener('hashchange', route);
-window.addEventListener('DOMContentLoaded', route);
+window.addEventListener('hashchange', () => { void route(); });
+window.addEventListener('DOMContentLoaded', () => { void route(); });
 
 // Navbar helper (exported for pages)
 export function renderNavbar(container, links = []) {

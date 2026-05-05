@@ -1,4 +1,4 @@
-import { submitApplication, getApplication, DEPARTMENTS } from '../store.js';
+import { submitApplication, getApplication } from '../store.js';
 import { renderNavbar, setupPhoneMask } from '../main.js';
 
 export function renderApply(container) {

@@ -1,4 +1,4 @@
-import { getApplication, getDtrEntries, addDtrEntry, getSchoolActivities, addSchoolActivity, getMessages, sendMessage, computeHours, formatHours, COMPANY_DOCUMENTS, updateDocStatus, addSchoolDoc, getStore, updateAppStatus, markMessagesAsRead } from '../store.js';
+import { getApplication, getDtrEntries, addDtrEntry, getSchoolActivities, addSchoolActivity, getMessages, sendMessage, computeHours, formatHours, getCompanyDocuments, updateDocStatus, addSchoolDoc, getStore, updateAppStatus, markMessagesAsRead } from '../store.js';
 import { renderNavbar } from '../main.js';
 
 let activeTab = 'deployment';
@@ -172,7 +172,7 @@ function renderDeployment(el, app) {
 }
 
 function renderDocuments(el, app) {
-  const docs = COMPANY_DOCUMENTS;
+  const docs = getCompanyDocuments();
   const companyDocs = app.companyDocs || {};
   const schoolDocs = app.schoolDocs || [];
   const messages = getMessages(app.id);

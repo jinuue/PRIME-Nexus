@@ -4,12 +4,12 @@ import { setupPhoneMask } from '../main.js';
 export function renderLogin(container, mode = 'intern') {
   const isHR = mode === 'hr';
   const isSupervisor = mode === 'supervisor';
-  
+
   const title = isHR ? 'HR Administration' : isSupervisor ? 'Supervisor Portal' : 'Intern Portal';
   const subtitle = isHR ? 'Authorized HR personnel only' : isSupervisor ? 'Authorized Supervisors only' : 'Sign in to your account';
-  const btnText = isHR ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-bottom:2px;margin-right:4px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Sign In as HR' 
-                : isSupervisor ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-bottom:2px;margin-right:4px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Sign In as Supervisor'
-                : 'Sign In';
+  const btnText = isHR ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-bottom:2px;margin-right:4px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Sign In as HR'
+    : isSupervisor ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-bottom:2px;margin-right:4px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Sign In as Supervisor'
+      : 'Sign In';
 
   container.innerHTML = `
     <div class="auth-page">
@@ -46,19 +46,16 @@ export function renderLogin(container, mode = 'intern') {
     </div>
   `;
 
-  document.getElementById('login-form').onsubmit = (e) => {
+  document.getElementById('login-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const email = fd.get('email');
     const password = fd.get('password');
-    const user = loginUser(email, password, mode);
+    const user = loginUser(email, password, isHR ? 'hr' : 'intern');
     if (user) {
       window.APP.login(user);
     } else {
-      let errMsg = 'Invalid email or password.';
-      if (isHR) errMsg = 'Access denied. HR credentials required.';
-      if (isSupervisor) errMsg = 'Access denied. Supervisor credentials required.';
-      document.getElementById('auth-error').innerHTML = `<div class="auth-error">${errMsg}</div>`;
+      document.getElementById('auth-error').innerHTML = `<div class="auth-error">${isHR ? 'Access denied. HR credentials required.' : 'Invalid email or password.'}</div>`;
     }
   };
 }
@@ -105,10 +102,10 @@ export function renderRegister(container) {
 
   setupPhoneMask(document.getElementById('input-phone'));
 
-  document.getElementById('register-form').onsubmit = (e) => {
+  document.getElementById('register-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const result = registerUser({
+    const result = await registerUser({
       name: fd.get('name'),
       email: fd.get('email'),
       phone: fd.get('phone'),
