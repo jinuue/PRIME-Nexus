@@ -21,30 +21,31 @@ export function renderHRDashboard(container) {
     {
       title: 'Recruitment',
       items: [
-        { key: 'applications', icon: '📋', label: 'Applications' },
-        { key: 'masterlist_applicants', icon: '👤', label: 'Applicants List' },
+        { key: 'applications', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>', label: 'Applications' },
+        { key: 'masterlist_applicants', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>', label: 'Applicants List' },
       ]
     },
     {
       title: 'Intern Management',
       items: [
-        { key: 'masterlist_interns', icon: '🎓', label: 'Deployed Interns' },
-        { key: 'docs', icon: '📄', label: 'Document Tracking' },
-        { key: 'dtr', icon: '⏱️', label: 'DTR Access' },
+        { key: 'masterlist_interns', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>', label: 'Deployed Interns' },
+        { key: 'docs', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>', label: 'Document Tracking' },
+        { key: 'dtr', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><polyline points="12 9 12 13 14 15"></polyline><line x1="12" y1="2" x2="12" y2="5"></line></svg>', label: 'DTR Access' },
       ]
     },
     {
       title: 'Communications',
       items: [
-        { key: 'email', icon: '✉️', label: 'Email Templates' },
-        { key: 'messages', icon: '💬', label: 'Communications' },
+        { key: 'email', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>', label: 'Email Templates' },
+        { key: 'messages', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>', label: 'Intern Chat' },
+        { key: 'sup_messages', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>', label: 'Supervisor Chat' },
       ]
     },
     {
       title: 'Records & Insights',
       items: [
-        { key: 'historical', icon: '📂', label: 'Historical Records' },
-        { key: 'analytics', icon: '📊', label: 'Analytics' },
+        { key: 'historical', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>', label: 'Historical Records' },
+        { key: 'analytics', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>', label: 'Analytics' },
       ]
     }
   ];
@@ -83,7 +84,7 @@ export function updateSidebarBadge() {
   const data = getStore();
   let unreadMessagesCount = 0;
   (data.applications || []).forEach(a => {
-    if (a.status === 'accepted') {
+    if (a.status === 'accepted' && a.isDeployed) {
       const msgs = getMessages(a.id);
       const unreadCount = msgs.filter(m => m.from === 'intern' && !m.read).length;
       if (unreadCount > 0) unreadMessagesCount++;
@@ -105,6 +106,30 @@ export function updateSidebarBadge() {
       badge.remove();
     }
   }
+
+  let unreadSupCount = 0;
+  (data.users || []).forEach(u => {
+    if (u.role === 'supervisor') {
+      const msgs = getMessages(u.id);
+      if (msgs.some(m => m.from === 'supervisor' && !m.read)) unreadSupCount++;
+    }
+  });
+
+  const supSidebarBtn = document.querySelector('.hr-sidebar-link[data-section="sup_messages"]');
+  if (supSidebarBtn) {
+    let badge = supSidebarBtn.querySelector('.nav-badge');
+    if (unreadSupCount > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-badge';
+        badge.style.cssText = 'background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:auto';
+        supSidebarBtn.appendChild(badge);
+      }
+      badge.textContent = unreadSupCount;
+    } else if (badge) {
+      badge.remove();
+    }
+  }
 }
 
 function renderHRContent(content) {
@@ -120,6 +145,7 @@ function renderHRContent(content) {
     case 'docs': renderDocTracking(content, apps); break;
     case 'email': renderEmailTemplates(content, apps); break;
     case 'messages': renderMessages(content, apps); break;
+    case 'sup_messages': renderSupervisorChat(content, data); break;
     case 'dtr': renderDTRAccess(content, apps); break;
     case 'historical': renderHistoricalData(content); break;
     case 'analytics': renderAnalytics(content, apps); break;
@@ -142,7 +168,7 @@ function renderDocTracking(el, apps) {
   selectDiv.className = 'form-group';
   selectDiv.innerHTML = `
     <label>Select Intern to View Progress</label>
-    <select class="form-control" id="doc-intern-select"><option value="">-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}</select>
+    <select class="form-control" id="doc-intern-select"><option value="" disabled selected hidden>-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}</select>
   `;
   el.appendChild(selectDiv);
 
@@ -201,7 +227,7 @@ function renderDocTracking(el, apps) {
               <div style="font-size:0.7rem;color:var(--text-secondary)">${doc.fileName}</div>
               <div class="mt-1"><span class="badge ${badgeCls}">${doc.status.toUpperCase()}</span></div>
             </div>
-            ${doc.status === 'submitted' ? `<button class="btn btn-primary btn-sm sign-doc-btn" style="font-size:0.7rem" data-appid="${appId}" data-docname="${doc.name}">Sign Now</button>` : ''}
+            ${doc.status === 'submitted' ? `<button class="btn btn-primary btn-sm sign-doc-btn" style="font-size:0.7rem" data-appid="${appId}" data-docid="${doc.id}">✅ Mark as Signed</button>` : ''}
           </div>
         `;
       });
@@ -226,8 +252,11 @@ function renderDocTracking(el, apps) {
 
     docView.querySelectorAll('.sign-doc-btn').forEach(btn => {
       btn.onclick = () => {
-        signSchoolDoc(btn.dataset.appid, btn.dataset.docname, 'HR Administrator');
-        updateDocView(appId);
+        if (confirm('Confirm that this document has been physically signed?')) {
+          signSchoolDoc(btn.dataset.appid, btn.dataset.docid, 'HR Administrator');
+          updateDocView(appId);
+          alert('Document marked as signed.');
+        }
       };
     });
   }
@@ -373,7 +402,7 @@ function renderApplications(el, apps, data) {
         <td><span style="font-size:0.8rem">${a.appliedDate}<br>${a.quarter || ''}</span></td>
         <td>
           ${isWithdrawn
-          ? `<span class="badge badge-red">${formatSt('withdrawn')}</span>`
+          ? `<span class="badge badge-red">${formatSt('withdrawn')}</span><div style="font-size:0.75rem;color:var(--accent-red);margin-top:0.25rem;line-height:1.2"><strong>Reason:</strong><br/>${a.withdrawReason || 'Not specified'}</div>`
           : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="status">${statusOptions}</select>`
         }
         </td>
@@ -391,8 +420,8 @@ function renderApplications(el, apps, data) {
             <input type="time" class="form-control" style="font-size:0.78rem;padding:0.25rem 0.4rem" data-appid="${a.id}" data-field="interviewTime" value="${a.status === 'final_interview' ? (a.finalInterviewTime || '') : (a.interviewTime || '')}" />
           ` : a.status === 'accepted' ? `
             ${a.isDeployed
-            ? '<span class="badge badge-green">🚀 DEPLOYED</span>'
-            : `<button class="btn btn-success btn-sm btn-deploy" data-appid="${a.id}">🚀 Deploy to Office</button>`}
+            ? '<span class="badge badge-green"><i class="fi fi-rs-rocket-lunch" style="margin-right:4px"></i> DEPLOYED</span>'
+            : `<button class="btn btn-success btn-sm btn-deploy" data-appid="${a.id}"><i class="fi fi-rs-rocket-lunch" style="margin-right:4px"></i> Deploy to Office</button>`}
           ` : '<span style="font-size:0.78rem;color:var(--text-secondary)">—</span>'}
         </td>
       </tr>`;
@@ -470,7 +499,12 @@ function attachAppListeners(container, data) {
           alert('Please assign a department first before deployment.');
           return;
         }
-        
+
+        const supervisors = store.users.filter(u => u.role === 'supervisor');
+        const supervisorOptions = supervisors.map(s => {
+          return `<option value="${s.name}">${s.name} (${s.department})</option>`;
+        }).join('');
+
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
@@ -480,7 +514,10 @@ function attachAppListeners(container, data) {
             <form id="deploy-form">
               <div class="form-group">
                 <label>Assigned Supervisor</label>
-                <input type="text" class="form-control" name="supervisor" placeholder="e.g. John Doe" required />
+                <select class="form-control" name="supervisor" required>
+                  <option value="" disabled selected hidden>Select a supervisor</option>
+                  ${supervisorOptions}
+                </select>
               </div>
               <div class="form-group">
                 <label>Work Schedule</label>
@@ -492,7 +529,7 @@ function attachAppListeners(container, data) {
               </div>
               <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" id="btn-cancel-deploy">Cancel</button>
-                <button type="submit" class="btn btn-success">🚀 Confirm Deployment</button>
+                <button type="submit" class="btn btn-success"><i class="fi fi-rs-rocket-lunch" style="margin-right:4px"></i> Confirm Deployment</button>
               </div>
             </form>
           </div>
@@ -527,10 +564,14 @@ function renderMasterlist(el, apps, type) {
   renderFilterBar(filterDiv, apps);
 
   let filtered = filterApps(apps).sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   if (isInterns) {
-    filtered = filtered.filter(a => a.status === 'accepted' && a.isDeployed);
+    filtered = filtered.filter(a => a.status === 'accepted' && a.isDeployed && a.startDate <= today);
   } else {
-    filtered = filtered.filter(a => a.status !== 'accepted' || (a.status === 'accepted' && !a.isDeployed));
+    // Show non-accepted, OR accepted but not deployed, OR accepted and deployed but start date is in the future
+    filtered = filtered.filter(a => a.status !== 'accepted' || (a.status === 'accepted' && (!a.isDeployed || a.startDate > today)));
   }
 
   if (!filtered.length) {
@@ -554,7 +595,8 @@ function renderMasterlist(el, apps, type) {
       dtrs.forEach(d => { const h = computeHours(d.timeIn, d.timeOut); total += h.total; });
       return `<tr><td><strong>${a.name}</strong></td><td>${a.school || 'N/A'}</td><td>${a.course || 'N/A'}</td><td>${a.department || 'N/A'}</td><td>${a.supervisor || 'N/A'}</td><td>${formatHours(total)} / ${a.hoursRequired || 'N/A'}</td><td><span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span></td></tr>`;
     } else {
-      return `<tr><td><strong>${a.name}</strong></td><td>${a.email}</td><td>${a.phone || 'N/A'}</td><td>${a.school || 'N/A'}</td><td>${a.course || 'N/A'}</td><td><span class="badge ${getBadgeCls(a.status)}">${formatSt(a.status)}</span></td><td><span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span></td></tr>`;
+      const isIncoming = a.status === 'accepted' && a.isDeployed;
+      return `<tr><td><strong>${a.name}</strong></td><td>${a.email}</td><td>${a.phone || 'N/A'}</td><td>${a.school || 'N/A'}</td><td>${a.course || 'N/A'}</td><td><span class="badge ${getBadgeCls(a.status)}">${formatSt(a.status)}${isIncoming ? ' (Incoming)' : ''}</span></td><td><span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span></td></tr>`;
     }
   }).join('');
 
@@ -743,6 +785,45 @@ function renderMessages(el, apps) {
     </div>
   `;
 
+  // Handle New Conversation Modal
+  document.getElementById('btn-new-chat').onclick = () => {
+    if (!allInterns.length) {
+      alert('There are no deployed interns available to start a conversation with.');
+      return;
+    }
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const options = allInterns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('');
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>Start New Conversation</h2>
+        <div class="form-group mt-1">
+          <label>Select Deployed Intern</label>
+          <select id="new-chat-intern" class="form-control">
+            <option value="" disabled selected hidden>-- Choose Intern --</option>
+            ${options}
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-cancel-chat">Cancel</button>
+          <button class="btn btn-primary" id="btn-start-chat">Start Chat</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('btn-cancel-chat').onclick = () => overlay.remove();
+    document.getElementById('btn-start-chat').onclick = () => {
+      const id = document.getElementById('new-chat-intern').value;
+      if (!id) return;
+      const intern = allInterns.find(a => a.id === id);
+      if (intern) {
+        activeChatInternId = intern.id;
+        renderHRContent(document.querySelector('.hr-content'));
+      }
+      overlay.remove();
+    };
+  };
+
   if (!allInterns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
@@ -762,7 +843,7 @@ function renderMessages(el, apps) {
   list.className = 'card';
   list.style.padding = '0';
   list.style.overflowY = 'auto';
-  
+
   // Sort interns by latest message
   activeInterns.sort((a, b) => {
     const msgsA = getMessages(a.id);
@@ -783,7 +864,7 @@ function renderMessages(el, apps) {
     const lastMsg = lastMsgObj ? lastMsgObj.text : 'No messages yet';
     const isUnread = msgs.some(m => m.from === 'intern' && !m.read);
     const timeStr = lastMsgObj ? lastMsgObj.time.split(',')[0] : '';
-    
+
     const item = document.createElement('div');
     item.className = 'doc-item';
     item.style.padding = '1rem';
@@ -855,45 +936,127 @@ function renderMessages(el, apps) {
     };
   }
 
-  // Handle New Conversation Modal
-  document.getElementById('btn-new-chat').onclick = () => {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    const options = allInterns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('');
-    overlay.innerHTML = `
-      <div class="modal">
-        <h2>Start New Conversation</h2>
-        <div class="form-group mt-1">
-          <label>Select Deployed Intern</label>
-          <select id="new-chat-intern" class="form-control">
-            <option value="">-- Choose Intern --</option>
-            ${options}
-          </select>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-secondary" id="btn-cancel-chat">Cancel</button>
-          <button class="btn btn-primary" id="btn-start-chat">Start Chat</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-    document.getElementById('btn-cancel-chat').onclick = () => overlay.remove();
-    document.getElementById('btn-start-chat').onclick = () => {
-      const id = document.getElementById('new-chat-intern').value;
-      if (!id) return;
-      const intern = allInterns.find(a => a.id === id);
-      if (intern) {
-        activeChatInternId = intern.id;
-        renderHRContent(document.querySelector('.hr-content'));
-      }
-      overlay.remove();
-    };
-  };
+
 
   // Auto-open active chat if exists
   if (activeChatInternId) {
     const intern = allInterns.find(a => a.id === activeChatInternId);
     if (intern) renderChat(intern);
+  }
+}
+
+let activeChatSupId = null;
+
+function renderSupervisorChat(el, data) {
+  const supervisors = data.users.filter(u => u.role === 'supervisor');
+  el.innerHTML = '<h2 class="mb-2">👥 Supervisor Chat</h2>';
+
+  const grid = document.createElement('div');
+  grid.className = 'grid-2';
+  grid.style.gridTemplateColumns = '300px 1fr';
+  grid.style.height = 'calc(100vh - 200px)';
+  el.appendChild(grid);
+
+  // Left List
+  const list = document.createElement('div');
+  list.className = 'card';
+  list.style.padding = '0';
+  list.style.overflowY = 'auto';
+
+  supervisors.sort((a, b) => {
+    const msgsA = getMessages(a.id);
+    const msgsB = getMessages(b.id);
+    const timeA = msgsA.length > 0 ? parseInt(msgsA[msgsA.length - 1].id.slice(3)) : 0;
+    const timeB = msgsB.length > 0 ? parseInt(msgsB[msgsB.length - 1].id.slice(3)) : 0;
+    return timeB - timeA;
+  });
+
+  list.innerHTML = `<div style="padding:1rem;border-bottom:1px solid var(--border);font-weight:600">Supervisors</div>`;
+  if (supervisors.length === 0) {
+    list.innerHTML += `<div style="padding:1rem;font-size:0.8rem;color:var(--text-secondary);text-align:center">No supervisors found.</div>`;
+  }
+
+  supervisors.forEach(s => {
+    const msgs = getMessages(s.id);
+    const lastMsgObj = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+    const lastMsg = lastMsgObj ? lastMsgObj.text : 'No messages yet';
+    const isUnread = msgs.some(m => m.from === 'supervisor' && !m.read);
+    const timeStr = lastMsgObj ? lastMsgObj.time.split(',')[0] : '';
+
+    const item = document.createElement('div');
+    item.className = 'doc-item';
+    item.style.padding = '1rem';
+    item.style.borderBottom = '1px solid var(--border)';
+    item.style.cursor = 'pointer';
+    item.style.display = 'flex';
+    item.style.justifyContent = 'space-between';
+    item.style.alignItems = 'center';
+    item.style.background = s.id === activeChatSupId ? 'var(--surface2)' : 'none';
+    item.innerHTML = `
+      <div style="flex:1;overflow:hidden">
+        <div style="font-weight:600;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem">
+          ${s.name} ${isUnread ? '<span style="background:var(--accent-red);width:8px;height:8px;border-radius:50%;display:inline-block"></span>' : ''}
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:${isUnread ? '600' : 'normal'}">${lastMsg}</div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--text-secondary)">${timeStr}</div>
+    `;
+    item.onclick = () => {
+      list.querySelectorAll('.doc-item').forEach(d => d.style.background = 'none');
+      item.style.background = 'var(--surface2)';
+      renderChat(s);
+    };
+    list.appendChild(item);
+  });
+  grid.appendChild(list);
+
+  // Right Chat Area
+  const chatArea = document.createElement('div');
+  chatArea.id = 'hr-sup-chat-area';
+  chatArea.className = 'card';
+  chatArea.style.padding = '0';
+  chatArea.style.display = 'flex';
+  chatArea.style.flexDirection = 'column';
+  chatArea.innerHTML = '<div class="empty-state" style="margin:auto"><p>Select a supervisor to start chatting</p></div>';
+  grid.appendChild(chatArea);
+
+  function renderChat(sup) {
+    activeChatSupId = sup.id;
+    markMessagesAsRead(sup.id, 'hr');
+    updateSidebarBadge();
+    const messages = getMessages(sup.id);
+    let msgsHTML = '';
+    messages.forEach(m => {
+      const cls = m.from === 'hr' ? 'sent' : 'received';
+      msgsHTML += `<div class="chat-msg ${cls}"><div>${m.text}</div><div class="msg-time">${m.time}</div></div>`;
+    });
+
+    chatArea.innerHTML = `
+      <div style="padding:1rem;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600">${sup.name} — ${sup.department}</div>
+      <div class="chat-messages" style="flex:1;overflow-y:auto;padding:1rem">${msgsHTML || '<div class="empty-state"><p>No messages yet.</p></div>'}</div>
+      <div class="chat-input" style="padding:1rem;border-top:1px solid var(--border)">
+        <input type="text" class="form-control" id="hr-sup-chat-msg-input" placeholder="Type a message to ${sup.name}..." />
+        <button class="btn btn-primary btn-sm" id="btn-hr-sup-send-msg">Send</button>
+      </div>
+    `;
+
+    const chatMsgs = chatArea.querySelector('.chat-messages');
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+
+    document.getElementById('btn-hr-sup-send-msg').onclick = () => {
+      const input = document.getElementById('hr-sup-chat-msg-input');
+      if (!input.value.trim()) return;
+      sendMessage(sup.id, 'hr', input.value.trim());
+      renderHRContent(document.querySelector('.hr-content'));
+    };
+    document.getElementById('hr-sup-chat-msg-input').onkeydown = (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-hr-sup-send-msg').click();
+    };
+  }
+
+  if (activeChatSupId) {
+    const sup = supervisors.find(s => s.id === activeChatSupId);
+    if (sup) renderChat(sup);
   }
 }
 
@@ -910,16 +1073,43 @@ function renderDTRAccess(el, apps) {
   }
 
   const selectDiv = document.createElement('div');
-  selectDiv.className = 'form-group';
+  selectDiv.className = 'grid-2 mb-2';
+  selectDiv.style.gap = '1rem';
   selectDiv.innerHTML = `
-    <label>Select Intern</label>
-    <select class="form-control" id="dtr-intern-select"><option value="">-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}</select>
+    <div class="form-group">
+      <label>Filter by Department</label>
+      <select class="form-control" id="dtr-dept-select">
+        <option value="all">All Departments</option>
+        ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Select Intern</label>
+      <select class="form-control" id="dtr-intern-select">
+        <option value="" disabled selected hidden>-- Choose intern --</option>
+        ${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}
+      </select>
+    </div>
   `;
   el.appendChild(selectDiv);
 
   const dtrView = document.createElement('div');
   dtrView.id = 'hr-dtr-view';
   el.appendChild(dtrView);
+
+  document.getElementById('dtr-dept-select').onchange = (e) => {
+    const dept = e.target.value;
+    const internSelect = document.getElementById('dtr-intern-select');
+    const filteredInterns = dept === 'all' ? interns : interns.filter(i => i.department === dept);
+
+    internSelect.innerHTML =
+      `<option value="" disabled selected hidden>-- Choose intern --</option>` +
+      (filteredInterns || []).map(i =>
+        `<option value="${i.id}">${i.name} - ${i.department || 'Unassigned'}</option>`
+      ).join('');
+
+    dtrView.innerHTML = '';
+  };
 
   document.getElementById('dtr-intern-select').onchange = (e) => {
     const appId = e.target.value;
@@ -932,27 +1122,47 @@ function renderDTRAccess(el, apps) {
     dtrs.forEach(d => { const h = computeHours(d.timeIn, d.timeOut); totalWork += h.regular; totalOT += h.overtime; });
     const approvedSchool = schoolActs.filter(s => s.status === 'approved').reduce((s, a) => s + (a.hours || 8), 0);
 
+    const regHoursStr = formatHours(totalWork);
+    const otHoursStr = formatHours(totalOT);
+    const schoolHoursStr = formatHours(Math.min(approvedSchool, 30));
+    const totalHoursStr = formatHours(totalWork + totalOT + Math.min(approvedSchool, 30));
+
+    const stats = [
+      { label: 'Regular', val: regHoursStr },
+      { label: 'Overtime', val: otHoursStr },
+      { label: 'School', val: schoolHoursStr },
+      { label: 'Total', val: totalHoursStr }
+    ];
+
     let html = `
-      <div class="flex mt-2 mb-2" style="gap:0.75rem">
-        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork)}</div><div class="stat-label">Regular</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalOT)}</div><div class="stat-label">Overtime</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(Math.min(approvedSchool, 30))}</div><div class="stat-label">School</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork + totalOT + Math.min(approvedSchool, 30))}</div><div class="stat-label">Total</div></div>
+  <div class="flex mt-2 mb-2" style="gap:0.75rem">
+    ${(stats || []).map(s => `
+      <div class="stat-card" style="flex:1">
+        <div class="stat-number">${s?.val ?? 0}</div>
+        <div class="stat-label">${s?.label ?? 'N/A'}</div>
       </div>
-    `;
+    `).join('')}
+  </div>
+`;
 
     if (dtrs.length) {
-      html += '<div class="table-wrap mb-2"><table><thead><tr><th>Date</th><th>In</th><th>Out</th><th>Regular</th><th>OT</th><th>Total</th></tr></thead><tbody>';
-      dtrs.forEach(d => {
+      const dtrRows = dtrs.map(d => {
         const h = computeHours(d.timeIn, d.timeOut);
-        html += `<tr><td>${d.date}</td><td>${d.timeIn}</td><td>${d.timeOut}</td><td>${formatHours(h.regular)}</td><td>${formatHours(h.overtime)}</td><td><strong>${formatHours(h.total)}</strong></td></tr>`;
-      });
-      html += '</tbody></table></div>';
+        return `<tr><td>${d.date}</td><td>${d.timeIn}</td><td>${d.timeOut}</td><td>${formatHours(h.regular)}</td><td>${formatHours(h.overtime)}</td><td><strong>${formatHours(h.total)}</strong></td></tr>`;
+      }).join('');
+
+      html += `
+        <div class="table-wrap mb-2">
+          <table>
+            <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Regular</th><th>OT</th><th>Total</th></tr></thead>
+            <tbody>${dtrRows}</tbody>
+          </table>
+        </div>
+      `;
     }
 
     if (schoolActs.length) {
-      html += '<h3 class="mb-1">School Activities</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Activity</th><th>Proof</th><th>Status</th><th>Action</th></tr></thead><tbody>';
-      schoolActs.forEach(s => {
+      const actRows = schoolActs.map(s => {
         const bc = s.status === 'approved' ? 'badge-green' : s.status === 'rejected' ? 'badge-red' : 'badge-yellow';
         const bt = s.status === 'approved' ? '✅ Approved' : s.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
         const actions = s.status === 'pending'
@@ -961,9 +1171,18 @@ function renderDTRAccess(el, apps) {
         const proofBtn = s.proofName
           ? `<button class="btn btn-secondary btn-sm" style="padding:0 0.4rem;font-size:0.7rem" onclick="alert('Viewing Proof: ${s.proofName}')">📄 View</button>`
           : '—';
-        html += `<tr><td>${s.date}</td><td>${s.activity}</td><td>${proofBtn}</td><td><span class="badge ${bc}">${bt}</span></td><td>${actions}</td></tr>`;
-      });
-      html += '</tbody></table></div>';
+        return `<tr><td>${s.date}</td><td>${s.activity}</td><td>${proofBtn}</td><td><span class="badge ${bc}">${bt}</span></td><td>${actions}</td></tr>`;
+      }).join('');
+
+      html += `
+        <h3 class="mb-1">School Activities</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Activity</th><th>Proof</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>${actRows}</tbody>
+          </table>
+        </div>
+      `;
     }
 
     dtrView.innerHTML = html;
@@ -1105,13 +1324,13 @@ function renderHistoricalData(el) {
             <div style="flex:1">
               <label>Start Month</label>
               <select id="input-legacy-start" class="form-control">
-                ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m => `<option value="${m}">${m}</option>`).join('')}
+                ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => `<option value="${m}">${m}</option>`).join('')}
               </select>
             </div>
             <div style="flex:1">
               <label>End Month</label>
               <select id="input-legacy-end" class="form-control">
-                ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m => `<option value="${m}">${m}</option>`).join('')}
+                ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => `<option value="${m}">${m}</option>`).join('')}
               </select>
             </div>
             <div style="width:100px">
@@ -1202,7 +1421,7 @@ function renderHistoricalData(el) {
 
   function renderList() {
     let list = [...legacy];
-    
+
     // Filtering
     if (filterDept.value !== 'all') list = list.filter(l => l.department === filterDept.value);
     if (filterType.value !== 'all') list = list.filter(l => l.ojtType === filterType.value);
@@ -1274,7 +1493,7 @@ function renderHistoricalData(el) {
       const y = el.querySelector('#input-legacy-y').value;
       period = `${s}-${e_} ${y}`;
     }
-    
+
     addLegacyIntern({
       name: fd.get('name'),
       email: fd.get('email'),

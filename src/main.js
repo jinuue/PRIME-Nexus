@@ -16,6 +16,7 @@ window.APP = {
     sessionStorage.setItem('prime_user', JSON.stringify(user));
     const app = getApplication(user.id);
     if (user.role === 'hr') this.navigate('#hr');
+    else if (user.role === 'supervisor') this.navigate('#supervisor');
     else if (user.role === 'intern' || (app && app.status === 'accepted')) this.navigate('#status');
     else if (app) this.navigate('#status');
     else this.navigate('#apply');
@@ -35,7 +36,7 @@ function route() {
   app.innerHTML = '';
 
   // Auth guard
-  const publicPages = ['#landing', '#login', '#login-hr', '#register'];
+  const publicPages = ['#landing', '#login', '#login-hr', '#login-supervisor', '#register'];
   if (!publicPages.includes(hash) && !window.APP.user) {
     window.location.hash = '#login';
     return;
@@ -56,11 +57,15 @@ function route() {
       case '#landing': renderLanding(app); break;
       case '#login': renderLogin(app, 'intern'); break;
       case '#login-hr': renderLogin(app, 'hr'); break;
+      case '#login-supervisor': renderLogin(app, 'supervisor'); break;
       case '#register': renderRegister(app); break;
       case '#apply': renderApply(app); break;
       case '#status': renderStatus(app); break;
       case '#intern': renderInternDashboard(app); break;
       case '#hr': renderHRDashboard(app); break;
+      case '#supervisor':
+        import('./pages/supervisor.js').then(mod => mod.renderSupervisorDashboard(app));
+        break;
       default: renderLanding(app); break;
     }
   } catch (e) {
@@ -79,6 +84,7 @@ export function renderNavbar(container, links = []) {
   nav.className = 'navbar';
   const initials = user ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2) : '';
 
+  let isDeployedIntern = false;
   let unreadCount = 0;
   if (user && (user.role === 'intern' || user.role === 'applicant')) {
     const data = getStore();
@@ -87,17 +93,23 @@ export function renderNavbar(container, links = []) {
       const msgs = (data.messages || []).filter(m => m.appId === app.id);
       unreadCount = msgs.filter(m => m.from === 'hr' && !m.read).length;
     }
+    if (app && app.isDeployed) {
+      isDeployedIntern = true;
+    }
   }
 
   nav.innerHTML = `
     <div class="container" style="max-width: 100%; padding: 0 1rem 0 0;">
-      <div class="nav-brand" onclick="location.hash='${user?.role === 'hr' ? '#hr' : '#status'}'" style="height: 64px; margin-left: 0;">
-        <div style="background:#76ABDF; padding: 0 1.5rem; height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 0 24px 24px 0;">
+      <div class="nav-brand" style="height: 64px; margin-left: 0; cursor: default;">
+        <div style="width: 240px; height: 100%; display: flex; align-items: center; justify-content: center;">
           <img src="/logo.png" alt="PRIME Logo" class="logo-img" style="height:48px;width:auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
           <div class="logo-box" style="display:none;width:40px;height:40px;background:var(--accent-yellow);color:var(--primary);border-radius:8px;align-items:center;justify-content:center;font-weight:800;font-size:1.5rem">P</div>
         </div>
         <div style="font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; color: #fff; margin-left: 0.5rem; letter-spacing: 0.5px;">
           Internship Management System
+          ${user?.role === 'supervisor' ? ' / <span style="color:var(--accent-yellow)">Supervisor Dashboard</span>' : ''}
+          ${user?.role === 'hr' ? ' / <span style="color:var(--accent-yellow)">HR Dashboard</span>' : ''}
+          ${isDeployedIntern ? ' / <span style="color:var(--accent-yellow)">Intern Dashboard</span>' : ''}
         </div>
       </div>
       <div class="nav-links" style="margin-left: 1.5rem">

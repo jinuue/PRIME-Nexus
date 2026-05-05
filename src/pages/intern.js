@@ -128,7 +128,7 @@ function renderDeployment(el, app) {
           <div class="form-group mt-1 text-left">
             <label>Reason for Withdrawal</label>
             <select id="withdraw-reason" class="form-control">
-              <option value="">-- Select Reason --</option>
+              <option value="" disabled selected hidden>-- Select Reason --</option>
               <option value="Accepted another offer">Accepted another offer</option>
               <option value="Schedule conflict">Schedule conflict</option>
               <option value="Personal reasons">Personal reasons</option>

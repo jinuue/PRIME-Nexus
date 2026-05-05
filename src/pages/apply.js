@@ -39,7 +39,7 @@ export function renderApply(container) {
             <div class="form-group">
               <label>Course / Program</label>
               <select name="course_select" class="form-control" required id="select-course">
-                <option value="">-- Select --</option>
+                <option value="" disabled selected hidden>-- Select --</option>
                 <option value="BS Information Technology">BS Information Technology</option>
                 <option value="BS Computer Science">BS Computer Science</option>
                 <option value="BS Business Administration">BS Business Administration</option>
@@ -63,7 +63,7 @@ export function renderApply(container) {
           <div class="form-group">
             <label>School / University</label>
             <select name="school_select" class="form-control" required id="select-school">
-              <option value="">-- Select --</option>
+              <option value="" disabled selected hidden>-- Select --</option>
               <optgroup label="Top Universities">
                 <option value="University of the Philippines">University of the Philippines (UP)</option>
                 <option value="Ateneo de Manila University">Ateneo de Manila University (ADMU)</option>
@@ -134,7 +134,7 @@ export function renderApply(container) {
             <div class="form-group">
               <label>Where did you find us?</label>
               <select name="source" class="form-control" required id="select-source">
-                <option value="">-- Select --</option>
+                <option value="" disabled selected hidden>-- Select --</option>
                 <option value="Facebook">Facebook</option>
                 <option value="Referral">Referral</option>
                 <option value="School/University Partner">School/University Partner</option>
