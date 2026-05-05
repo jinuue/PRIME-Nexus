@@ -1,33 +1,8 @@
-// Local API driven store
+﻿// Local API driven store
 
-const STORE_KEY = 'prime_ims_data';
-
-export const EMAIL_TEMPLATES = [
-  {
-    id: 'initial_invite', name: 'Initial Interview Invitation', subject: 'PRIME Philippines — Initial Interview Schedule',
-    body: `Dear {name},\n\nThank you for your interest in the PRIME Philippines Internship Program.\n\nWe are pleased to inform you that you have been shortlisted for an Initial Interview. Please see the details below:\n\nDate: {date}\nTime: {time}\nMode: {mode}\n\nPlease confirm your attendance by replying to this email.\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'final_invite', name: 'Final Interview Invitation', subject: 'PRIME Philippines — Final Interview Schedule',
-    body: `Dear {name},\n\nCongratulations on passing the Initial Interview!\n\nYou are now scheduled for a Final Interview. Details are as follows:\n\nDate: {date}\nTime: {time}\nMode: {mode}\n\nPlease prepare any additional documents that may be required.\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'acceptance', name: 'Acceptance Letter', subject: 'PRIME Philippines — Internship Acceptance',
-    body: `Dear {name},\n\nWe are delighted to inform you that you have been accepted into the PRIME Philippines Internship Program!\n\nYou will be assigned to the {department} Department. Your internship details will be available in the Intern Portal.\n\nPlease log in to your account to view your deployment information and complete the required documents.\n\nWelcome to the team!\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'rejection', name: 'Application Update', subject: 'PRIME Philippines — Application Status Update',
-    body: `Dear {name},\n\nThank you for taking the time to apply for the PRIME Philippines Internship Program.\n\nAfter careful consideration, we regret to inform you that we will not be moving forward with your application at this time. This decision does not reflect on your abilities, and we encourage you to apply again in the future.\n\nWe wish you the best in your academic and professional endeavors.\n\nSincerely,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'doc_reminder', name: 'Document Reminder', subject: 'PRIME Philippines — Document Submission Reminder',
-    body: `Dear {name},\n\nThis is a friendly reminder to submit the required documents for your internship at PRIME Philippines.\n\nPending documents can be viewed and uploaded through your Intern Portal dashboard.\n\nPlease submit them at your earliest convenience to avoid delays in your onboarding process.\n\nThank you,\nHR Department\nPRIME Philippines`
-  },
-];
-
-export async function initStore() {
-  getStore();
-}
+let storeCache = null;
+let initPromise = null;
+let persistChain = Promise.resolve();
 
 function makeId(prefix) {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -58,14 +33,6 @@ const COMPANY_DOCUMENTS = [
 const SEED_DATA = {
   users: [
     { id: 'hr1', email: 'hr@primeph.com', password: 'admin123', name: 'Maria Santos', role: 'hr' },
-    { id: 'sup_it', email: 'sup.it@primeph.com', password: 'sup123', name: 'Jonel Belandres', role: 'supervisor', department: 'IT / Development' },
-    { id: 'sup_mktg', email: 'sup.mktg@primeph.com', password: 'sup123', name: 'Franje Nuñez', role: 'supervisor', department: 'Marketing' },
-    { id: 'sup_hr', email: 'sup.hr@primeph.com', password: 'sup123', name: 'Triscia Mae Ganzon', role: 'supervisor', department: 'Human Resources' },
-    { id: 'sup_fin', email: 'sup.fin@primeph.com', password: 'sup123', name: 'Maria Clara', role: 'supervisor', department: 'Finance' },
-    { id: 'sup_ops', email: 'sup.ops@primeph.com', password: 'sup123', name: 'Juan Santos', role: 'supervisor', department: 'Operations' },
-    { id: 'sup_leg', email: 'sup.leg@primeph.com', password: 'sup123', name: 'Atty. Jose Rizal', role: 'supervisor', department: 'Legal' },
-    { id: 'sup_cre', email: 'sup.cre@primeph.com', password: 'sup123', name: 'Antonio Luna', role: 'supervisor', department: 'Creative / Design' },
-    { id: 'sup_adm', email: 'sup.adm@primeph.com', password: 'sup123', name: 'Emilio Aguinaldo', role: 'supervisor', department: 'Admin Support' },
   ],
   applications: [],
   dtrEntries: [],
@@ -90,7 +57,7 @@ function generateSeedApplicants() {
   const now = new Date();
   const apps = [
     {
-      id: 'app1', userId: 'u1', name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Jonel Belandres', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
+      id: 'app1', userId: 'u1', name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Engr. Carlos Reyes', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
       companyDocs: { doc1: 'signed', doc2: 'signed', doc3: 'submitted', doc4: 'pending', doc5: 'pending' },
       schoolDocs: [{ id: 'sd1', name: 'Endorsement Letter', status: 'submitted', signedBy: null }],
     },
@@ -126,35 +93,6 @@ export function getStore() {
     // Migration: ensure emailTemplates and deptSlots exist in old storage
     if (!data.emailTemplates) data.emailTemplates = [...EMAIL_TEMPLATES];
     if (!data.deptSlots) data.deptSlots = { ...SEED_DATA.deptSlots };
-
-    // Migration: ensure ALL supervisor test accounts exist in old storage
-    let changed = false;
-    const seedSups = SEED_DATA.users.filter(u => u.role === 'supervisor');
-    seedSups.forEach(s => {
-      const existing = data.users.find(u => u.id === s.id);
-      if (!existing) {
-        data.users.push(s);
-        changed = true;
-      } else if (existing.name !== s.name) {
-        existing.name = s.name;
-        changed = true;
-      }
-    });
-
-    // Clean up old sup1 and sup2 if they still exist to avoid duplicates
-    const oldSup1 = data.users.findIndex(u => u.id === 'sup1');
-    if (oldSup1 > -1) { data.users.splice(oldSup1, 1); changed = true; }
-    const oldSup2 = data.users.findIndex(u => u.id === 'sup2');
-    if (oldSup2 > -1) { data.users.splice(oldSup2, 1); changed = true; }
-
-    const app1 = data.applications.find(a => a.id === 'app1');
-    if (app1 && (app1.supervisor === 'Supervisor Jonel Belandres' || app1.supervisor === 'Engr. Carlos Reyes')) {
-      app1.supervisor = 'Jonel Belandres';
-      changed = true;
-    }
-    
-    if (changed) localStorage.setItem(STORE_KEY, JSON.stringify(data));
-
     return data;
   }
   const seed = generateSeedApplicants();
@@ -171,12 +109,13 @@ export function getStore() {
 }
 
 export function saveStore(data) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  storeCache = normalizeStore(data);
+  queuePersist();
 }
 
 export function resetStore() {
-  localStorage.removeItem(STORE_KEY);
-  return getStore();
+  storeCache = buildEmptyStore();
+  return storeCache;
 }
 
 // Auth helpers
@@ -185,8 +124,7 @@ export function loginUser(email, password, role) {
   const user = data.users.find(u => u.email === email && u.password === password);
   if (!user) return null;
   if (role === 'hr' && user.role !== 'hr') return null;
-  if (role === 'supervisor' && user.role !== 'supervisor') return null;
-  if (role === 'intern' && (user.role === 'hr' || user.role === 'supervisor')) return null;
+  if (role === 'intern' && user.role === 'hr') return null;
   return user;
 }
 

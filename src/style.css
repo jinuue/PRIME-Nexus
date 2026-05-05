@@ -608,18 +608,17 @@ tr:hover {
   flex: 1;
   text-align: center;
   position: relative;
-  z-index: 1;
 }
 
 .step::before {
   content: '';
   position: absolute;
-  top: 18px;
+  top: 20px;
   left: -50%;
   right: 50%;
   height: 4px;
   background: var(--border);
-  z-index: 0;
+  z-index: -1;
   border-radius: 2px;
   transition: background 0.5s ease;
 }
@@ -667,7 +666,7 @@ tr:hover {
   border-color: rgba(255, 255, 255, 0.5);
   box-shadow: 0 0 0 4px rgba(0, 112, 243, 0.2);
   transform: scale(1.1);
-  animation: none;
+  animation: pulse 2s infinite;
 }
 
 .step.failed .step-circle {
@@ -719,7 +718,9 @@ tr:hover {
 
 .auth-sidebar {
   flex: 1.2;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-mid) 100%);
+  background: linear-gradient(-45deg, var(--primary), var(--primary-mid), var(--primary-light), var(--accent-blue));
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
   color: white;
   display: none;
   flex-direction: column;
@@ -729,7 +730,7 @@ tr:hover {
   overflow: hidden;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .auth-sidebar {
     display: flex;
   }
