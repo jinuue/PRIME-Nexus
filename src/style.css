@@ -34,7 +34,7 @@
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --font: 'Inter', system-ui, sans-serif;
   --font-heading: 'Outfit', system-ui, sans-serif;
-  
+
   /* Component specific (Light Mode) */
   --nav-bg: #0A192F;
   --nav-text: #FFFFFF;
@@ -58,16 +58,17 @@
   --primary-light: #21262d;
   --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
   --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.7);
-  
+
   /* Component specific (Dark Mode Overrides) */
-  --nav-bg: #0A192F; /* Navbar stays dark blue in both themes */
+  --nav-bg: #0A192F;
+  /* Navbar stays dark blue in both themes */
   --nav-text: #FFFFFF;
   --sidebar-bg: #161b22;
   --sidebar-text: #a5b1be;
   --sidebar-link-hover: #21262d;
   --sidebar-link-active: var(--accent-blue);
   --sidebar-border: #30363d;
-  
+
   color-scheme: dark;
 }
 
