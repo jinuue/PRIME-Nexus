@@ -1,4 +1,4 @@
-import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, getDepartments, getCompanyDocuments, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead } from '../store.js';
+﻿import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, EMAIL_TEMPLATES, DEPARTMENTS, COMPANY_DOCUMENTS, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead } from '../store.js';
 import { renderNavbar, setupPhoneMask } from '../main.js';
 
 let hrSection = 'applications';
@@ -21,40 +21,31 @@ export function renderHRDashboard(container) {
     {
       title: 'Recruitment',
       items: [
-        { key: 'applications', icon: '<i data-lucide="clipboard-list" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Applications' },
-        { key: 'masterlist_applicants', icon: '<i data-lucide="users" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Applicants List' },
-        { key: 'applications', icon: '<i data-lucide="clipboard-list"></i>', label: 'Applications' },
-        { key: 'masterlist_applicants', icon: '<i data-lucide="users"></i>', label: 'Applicants List' },
+        { key: 'applications', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>', label: 'Applications' },
+        { key: 'masterlist_applicants', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>', label: 'Applicants List' },
       ]
     },
     {
       title: 'Intern Management',
       items: [
-        { key: 'masterlist_interns', icon: '<i data-lucide="graduation-cap" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Deployed Interns' },
-        { key: 'docs', icon: '<i data-lucide="file-check-2" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Document Tracking' },
-        { key: 'dtr', icon: '<i data-lucide="clock" style="width:18px;height:18px;margin-right:8px"></i>', label: 'DTR Access' },
-        { key: 'masterlist_interns', icon: '<i data-lucide="graduation-cap"></i>', label: 'Deployed Interns' },
-        { key: 'docs', icon: '<i data-lucide="file-text"></i>', label: 'Document Tracking' },
-        { key: 'dtr', icon: '<i data-lucide="clock"></i>', label: 'DTR Access' },
+        { key: 'masterlist_interns', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>', label: 'Deployed Interns' },
+        { key: 'docs', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>', label: 'Document Tracking' },
+        { key: 'dtr', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><polyline points="12 9 12 13 14 15"></polyline><line x1="12" y1="2" x2="12" y2="5"></line></svg>', label: 'DTR Access' },
       ]
     },
     {
       title: 'Communications',
       items: [
-        { key: 'email', icon: '<i data-lucide="mail" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Email Templates' },
-        { key: 'messages', icon: '<i data-lucide="message-square" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Intern Messages' },
-        { key: 'sup_messages', icon: '<i data-lucide="message-circle" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Supervisor Messages' },
-        { key: 'email', icon: '<i data-lucide="mail"></i>', label: 'Email Templates' },
-        { key: 'messages', icon: '<i data-lucide="message-square"></i>', label: 'Communications' },
+        { key: 'email', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>', label: 'Email Templates' },
+        { key: 'messages', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>', label: 'Intern Chat' },
+        { key: 'sup_messages', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>', label: 'Supervisor Chat' },
       ]
     },
     {
       title: 'Records & Insights',
       items: [
-        { key: 'historical', icon: '<i data-lucide="archive" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Historical Records' },
-        { key: 'analytics', icon: '<i data-lucide="bar-chart-2" style="width:18px;height:18px;margin-right:8px"></i>', label: 'Analytics' },
-        { key: 'historical', icon: '<i data-lucide="folder-open"></i>', label: 'Historical Records' },
-        { key: 'analytics', icon: '<i data-lucide="bar-chart-2"></i>', label: 'Analytics' },
+        { key: 'historical', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>', label: 'Historical Records' },
+        { key: 'analytics', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>', label: 'Analytics' },
       ]
     }
   ];
@@ -62,8 +53,8 @@ export function renderHRDashboard(container) {
   sidebar.innerHTML = groups.map(g => `
     <div class="hr-sidebar-section">${g.title}</div>
     ${g.items.map(s => `
-      <button class="hr-sidebar-link ${hrSection === s.key ? 'active' : ''}" data-section="${s.key}">
-        ${s.icon} <span>${s.label}</span>
+      <button class="hr-sidebar-link ${hrSection === s.key ? 'active' : ''}" style="display:flex;align-items:center;width:100%" data-section="${s.key}">
+        <span style="margin-right:0.5rem">${s.icon}</span> <span>${s.label}</span>
       </button>
     `).join('')}
   `).join('');
@@ -87,7 +78,6 @@ export function renderHRDashboard(container) {
   });
 
   renderHRContent(content);
-  if (window.lucide) window.lucide.createIcons();
 }
 
 export function updateSidebarBadge() {
@@ -160,18 +150,16 @@ function renderHRContent(content) {
     case 'historical': renderHistoricalData(content); break;
     case 'analytics': renderAnalytics(content, apps); break;
   }
-  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderDocTracking(el, apps) {
   const interns = apps.filter(a => a.status === 'accepted');
-  const companyDocuments = getCompanyDocuments();
-  el.innerHTML = '<h2 class="mb-2"><i data-lucide="file-text"></i> Document Tracking Dashboard</h2>';
+  el.innerHTML = '<h2 class="mb-2">≡ƒôä Document Tracking Dashboard</h2>';
 
   if (!interns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><path d="M12 14l9-5-9-5-9 5 9 5z"></path></svg><p style="font-weight:500">No deployed interns</p>';
+    empty.innerHTML = '<div class="icon">≡ƒô¡</div><p>No deployed interns</p>';
     el.appendChild(empty);
     return;
   }
@@ -180,7 +168,7 @@ function renderDocTracking(el, apps) {
   selectDiv.className = 'form-group';
   selectDiv.innerHTML = `
     <label>Select Intern to View Progress</label>
-    <select class="form-control" id="doc-intern-select"><option value="" disabled selected hidden>-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}</select>
+    <select class="form-control" id="doc-intern-select"><option value="" disabled selected hidden>-- Choose intern --</option>${interns.map(i => `<option value="${i.id}">${i.name} ΓÇö ${i.department || 'Unassigned'}</option>`).join('')}</select>
   `;
   el.appendChild(selectDiv);
 
@@ -203,7 +191,7 @@ function renderDocTracking(el, apps) {
           <div class="doc-list">
     `;
 
-    companyDocuments.forEach(doc => {
+    COMPANY_DOCUMENTS.forEach(doc => {
       const status = companyDocs[doc.id] || 'pending';
       const badgeCls = status === 'signed' ? 'badge-green' : status === 'submitted' ? 'badge-blue' : 'badge-gray';
       html += `
@@ -239,13 +227,13 @@ function renderDocTracking(el, apps) {
               <div style="font-size:0.7rem;color:var(--text-secondary)">${doc.fileName}</div>
               <div class="mt-1"><span class="badge ${badgeCls}">${doc.status.toUpperCase()}</span></div>
             </div>
-            ${doc.status === 'submitted' ? `<button class="btn btn-primary btn-sm sign-doc-btn" style="font-size:0.7rem" data-appid="${appId}" data-docid="${doc.id}"><i data-lucide="pen-tool" style="width:12px;height:12px;margin-right:4px;vertical-align:text-bottom"></i> Mark as Signed</button>` : ''}
+            ${doc.status === 'submitted' ? `<button class="btn btn-primary btn-sm sign-doc-btn" style="font-size:0.7rem" data-appid="${appId}" data-docid="${doc.id}">Γ£à Mark as Signed</button>` : ''}
           </div>
         `;
       });
       html += '</div>';
     } else {
-      html += '<div class="empty-state" style="padding:1rem"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><p style="font-weight:500">No school documents uploaded</p></div>';
+      html += '<div class="empty-state" style="padding:1rem"><p>No school documents uploaded</p></div>';
     }
 
     html += `
@@ -280,13 +268,13 @@ function renderDocTracking(el, apps) {
 
 function renderFilterBar(el, apps) {
   const quarters = [...new Set(apps.map(a => a.quarter).filter(Boolean))].sort();
-  const depts = getDepartments();
+  const depts = [...new Set(apps.map(a => a.department).filter(Boolean))];
 
   el.innerHTML = `
     <div class="filter-bar">
       <label style="font-size:0.85rem;font-weight:600;color:var(--primary)">Filters:</label>
       <select id="f-quarter"><option value="all">All Quarters</option>${quarters.map(q => `<option value="${q}" ${hrFilters.quarter === q ? 'selected' : ''}>${q}</option>`).join('')}</select>
-      <select id="f-dept"><option value="all">All Departments</option>${depts.map(d => `<option value="${d}" ${hrFilters.dept === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
+      <select id="f-dept"><option value="all">All Departments</option>${DEPARTMENTS.map(d => `<option value="${d}" ${hrFilters.dept === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
       <select id="f-type"><option value="all">All Types</option><option value="required" ${hrFilters.type === 'required' ? 'selected' : ''}>Required</option><option value="voluntary" ${hrFilters.type === 'voluntary' ? 'selected' : ''}>Voluntary</option></select>
     </div>
   `;
@@ -312,8 +300,7 @@ function filterApps(apps) {
 let hrAppTab = 'submitted';
 
 function renderApplications(el, apps, data) {
-  el.innerHTML = '<h2 class="mb-2"><i data-lucide="clipboard-list"></i> Application Management</h2>';
-  const departments = getDepartments();
+  el.innerHTML = '<h2 class="mb-2">≡ƒôï Application Management</h2>';
 
   // Slots Summary (Editable)
   const slotsDiv = document.createElement('div');
@@ -324,23 +311,22 @@ function renderApplications(el, apps, data) {
       <h3>Intern Slots per Department</h3>
       <div class="flex" style="gap: 0.5rem">
         <span class="badge badge-blue">Hired / Target</span>
-        <button class="btn btn-primary btn-sm" id="btn-add-dept"><i data-lucide="plus"></i> Add Department</button>
+        <button class="btn btn-primary btn-sm" id="btn-save-slots">≡ƒÆ╛ Save Slots</button>
       </div>
     </div>
-    <div class="grid-2" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+    <div class="grid-2" style="grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
   `;
 
-  departments.forEach(dept => {
+  DEPARTMENTS.forEach(dept => {
     const hired = apps.filter(a => a.status === 'accepted' && a.department === dept).length;
     const total = data.deptSlots?.[dept] || 0;
     const isFull = hired >= total && total > 0;
     slotsHTML += `
-      <div class="stat-card" style="padding:1.25rem; border-color: ${isFull ? 'var(--success)' : 'var(--border)'}; display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
-        <div style="font-size:0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;" title="${dept}">${dept}</div>
-        <div class="slot-edit-btn" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--surface2); padding: 0.6rem 1rem; border-radius: var(--radius); width: 100%; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent;" data-dept="${dept}" data-total="${total}" onmouseover="this.style.borderColor='var(--accent-blue)'; this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='scale(1)'" title="Click to edit slots">
-          <span style="font-size: 1.25rem; font-weight: 800; color: ${isFull ? 'var(--success)' : 'var(--text)'}">${hired}</span>
-          <span style="color: var(--text-secondary); font-weight: 600; margin: 0 0.25rem">/</span>
-          <span style="font-size: 1.25rem; font-weight: 800; color: var(--primary)">${total}</span>
+      <div class="stat-card" style="padding:0.75rem; border-color: ${isFull ? 'var(--accent-red)' : 'var(--border)'}">
+        <div class="stat-label" style="font-size:0.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${dept}">${dept}</div>
+        <div class="flex" style="align-items: center; gap: 0.5rem">
+          <span style="font-size: 0.9rem; font-weight: 700">${hired} / </span>
+          <input type="number" class="form-control" style="width: 50px; padding: 0.2rem; font-size: 0.9rem" data-dept="${dept}" value="${total}" min="0" />
         </div>
       </div>
     `;
@@ -349,86 +335,15 @@ function renderApplications(el, apps, data) {
   slotsDiv.innerHTML = slotsHTML;
   el.appendChild(slotsDiv);
 
-  slotsDiv.querySelectorAll('.slot-edit-btn').forEach(btn => {
-    btn.onclick = () => {
-      const dept = btn.dataset.dept;
-      const current = btn.dataset.total;
-
-      const overlay = document.createElement('div');
-      overlay.className = 'modal-overlay';
-      overlay.innerHTML = `
-        <div class="modal" style="max-width: 400px">
-          <h2 style="margin-bottom: 0.5rem; color: var(--primary)">Update Intern Slots</h2>
-          <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1.25rem">Set the target number of slots for <strong>${dept}</strong>.</p>
-          <form id="edit-slots-form">
-            <div class="form-group">
-              <label>Target Slots</label>
-              <input type="number" class="form-control" name="slots" value="${current}" min="0" required />
-            </div>
-            <div class="modal-actions" style="margin-top:1.5rem">
-              <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Changes</button>
-            </div>
-          </form>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-
-      document.getElementById('btn-cancel-edit').onclick = () => overlay.remove();
-      document.getElementById('edit-slots-form').onsubmit = (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const parsed = parseInt(fd.get('slots')) || 0;
-        const currentStore = getStore();
-        if (!currentStore.deptSlots) currentStore.deptSlots = {};
-        currentStore.deptSlots[dept] = parsed;
-        saveStore(currentStore);
-        overlay.remove();
-        renderHRContent(document.querySelector('.hr-content'));
-      };
-    };
-  });
-
-  document.getElementById('btn-add-dept').onclick = () => {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-      <div class="modal" style="max-width: 400px">
-        <h2 style="margin-bottom: 0.5rem; color: var(--primary)">Add Department</h2>
-        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1.25rem">Create a new department and set its target slots.</p>
-        <form id="add-dept-form">
-          <div class="form-group">
-            <label>Department Name</label>
-            <input type="text" class="form-control" name="deptName" placeholder="e.g. Finance" required />
-          </div>
-          <div class="form-group">
-            <label>Target Slots</label>
-            <input type="number" class="form-control" name="slots" value="1" min="0" required />
-          </div>
-          <div class="modal-actions" style="margin-top:1.5rem">
-            <button type="button" class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
-            <button type="submit" class="btn btn-primary"><i data-lucide="plus"></i> Add Department</button>
-          </div>
-        </form>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    document.getElementById('btn-cancel-add').onclick = () => overlay.remove();
-    document.getElementById('add-dept-form').onsubmit = (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const deptName = fd.get('deptName').trim();
-      const parsed = parseInt(fd.get('slots')) || 0;
-      if (deptName) {
-        const currentStore = getStore();
-        if (!currentStore.deptSlots) currentStore.deptSlots = {};
-        currentStore.deptSlots[deptName] = parsed;
-        saveStore(currentStore);
-        overlay.remove();
-        renderHRContent(document.querySelector('.hr-content'));
-      }
-    };
+  document.getElementById('btn-save-slots').onclick = () => {
+    const inputs = slotsDiv.querySelectorAll('input[data-dept]');
+    const newSlots = {};
+    inputs.forEach(inp => { newSlots[inp.dataset.dept] = parseInt(inp.value) || 0; });
+    const currentStore = getStore();
+    currentStore.deptSlots = newSlots;
+    saveStore(currentStore);
+    alert('Department slots updated successfully!');
+    renderHRContent(document.querySelector('.hr-content'));
   };
 
   const filterDiv = document.createElement('div');
@@ -455,7 +370,7 @@ function renderApplications(el, apps, data) {
   if (!activeGroup.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = `<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg><p style="font-weight:500">No applications found in "${formatSt(hrAppTab)}"</p>`;
+    empty.innerHTML = `<div class="icon">≡ƒô¡</div><p>No applications found in "${formatSt(hrAppTab)}"</p>`;
     el.appendChild(empty);
     return;
   }
@@ -469,7 +384,7 @@ function renderApplications(el, apps, data) {
         `<option value="${s}" ${a.status === s ? 'selected' : ''}>${formatSt(s)}</option>`
       ).join('');
 
-      const deptOptions = departments.map(d => `<option value="${d}" ${a.department === d ? 'selected' : ''}>${d}</option>`).join('');
+      const deptOptions = DEPARTMENTS.map(d => `<option value="${d}" ${a.department === d ? 'selected' : ''}>${d}</option>`).join('');
 
       return `<tr>
         <td>
@@ -480,8 +395,8 @@ function renderApplications(el, apps, data) {
           <span style="font-size:0.78rem">${a.school || 'N/A'}<br>${a.course || 'N/A'}</span><br>
           <div class="flex mt-1" style="gap: 0.25rem">
             <span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span>
-            ${a.cvName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing CV: ${a.cvName}')"><i data-lucide="file-text"></i> CV</button>` : ''}
-            ${a.coverName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing Portfolio: ${a.coverName}')"><i data-lucide="paperclip"></i> Portfolio</button>` : ''}
+            ${a.cvName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing CV: ${a.cvName}')">≡ƒôä CV</button>` : ''}
+            ${a.coverName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing Portfolio: ${a.coverName}')">≡ƒôÄ Portfolio</button>` : ''}
           </div>
         </td>
         <td><span style="font-size:0.8rem">${a.appliedDate}<br>${a.quarter || ''}</span></td>
@@ -493,7 +408,7 @@ function renderApplications(el, apps, data) {
         </td>
         <td>
           ${isWithdrawn || a.status === 'failed'
-          ? `<span style="font-size:0.8rem">${a.department || '—'}</span>`
+          ? `<span style="font-size:0.8rem">${a.department || 'ΓÇö'}</span>`
           : `<select class="form-control" style="font-size:0.8rem;padding:0.3rem 0.5rem" data-appid="${a.id}" data-field="department">
                 <option value="">Assign Dept</option>${deptOptions}
               </select>`
@@ -507,7 +422,7 @@ function renderApplications(el, apps, data) {
             ${a.isDeployed
             ? '<span class="badge badge-green"><i class="fi fi-rs-rocket-lunch" style="margin-right:4px"></i> DEPLOYED</span>'
             : `<button class="btn btn-success btn-sm btn-deploy" data-appid="${a.id}"><i class="fi fi-rs-rocket-lunch" style="margin-right:4px"></i> Deploy to Office</button>`}
-          ` : '<span style="font-size:0.78rem;color:var(--text-secondary)">—</span>'}
+          ` : '<span style="font-size:0.78rem;color:var(--text-secondary)">ΓÇö</span>'}
         </td>
       </tr>`;
     }).join('');
@@ -586,15 +501,11 @@ function attachAppListeners(container, data) {
         }
 
         const supervisors = store.users.filter(u => u.role === 'supervisor');
-        const matchingSups = supervisors.filter(s => s.department === app.department);
-        const listToUse = matchingSups.length > 0 ? matchingSups : supervisors;
-
-        const supervisorOptions = listToUse.map(s => {
+        const supervisorOptions = supervisors.map(s => {
           return `<option value="${s.name}">${s.name} (${s.department})</option>`;
         }).join('');
 
         const overlay = document.createElement('div');
-        const departments = getDepartments();
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
           <div class="modal">
@@ -646,7 +557,7 @@ function attachAppListeners(container, data) {
 
 function renderMasterlist(el, apps, type) {
   const isInterns = type === 'interns';
-  el.innerHTML = `<h2 class="mb-2">${isInterns ? '<i data-lucide="graduation-cap" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Deployed Interns' : '<i data-lucide="users" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Applicants Masterlist'}</h2>`;
+  el.innerHTML = `<h2 class="mb-2">${isInterns ? '≡ƒÄô Deployed Interns' : '≡ƒæñ Applicants Masterlist'}</h2>`;
 
   const filterDiv = document.createElement('div');
   el.appendChild(filterDiv);
@@ -666,7 +577,7 @@ function renderMasterlist(el, apps, type) {
   if (!filtered.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = `<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><p style="font-weight:500">No ${isInterns ? 'deployed interns' : 'applicants'} found</p>`;
+    empty.innerHTML = `<div class="icon">${isInterns ? '≡ƒÄô' : '≡ƒô¡'}</div><p>No ${isInterns ? 'deployed interns' : 'applicants'} found</p>`;
     el.appendChild(empty);
     return;
   }
@@ -709,8 +620,8 @@ function renderEmailTemplates(el, apps) {
   const templates = store.emailTemplates || [];
   el.innerHTML = `
     <div class="flex-between mb-2">
-      <h2 class="mb-0"><i data-lucide="mail" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Email Templates</h2>
-      <button class="btn btn-primary btn-sm" id="btn-add-template"><i data-lucide="plus" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> Add Template</button>
+      <h2 class="mb-0">Γ£ë∩╕Å Email Templates</h2>
+      <button class="btn btn-primary btn-sm" id="btn-add-template">Γ₧ò Add Template</button>
     </div>
   `;
 
@@ -743,8 +654,8 @@ function renderEmailTemplates(el, apps) {
         <div class="flex-between mb-1">
           <h3>Edit Template</h3>
           <div class="flex" style="gap:0.5rem">
-            <button class="btn btn-danger btn-sm" id="btn-delete-template"><i data-lucide="trash-2" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> Delete</button>
-            <button class="btn btn-primary btn-sm" id="btn-save-template"><i data-lucide="save" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> Save Template</button>
+            <button class="btn btn-danger btn-sm" id="btn-delete-template">≡ƒùæ∩╕Å Delete</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-template">≡ƒÆ╛ Save Template</button>
           </div>
         </div>
         <div class="form-group">
@@ -767,7 +678,7 @@ function renderEmailTemplates(el, apps) {
           <select class="form-control" id="email-recipient"><option value="">-- Choose recipient --</option>${apps.filter(a => !['withdrawn'].includes(a.status)).map(a => `<option value="${a.id}">${a.name} (${a.email})</option>`).join('')}</select>
         </div>
         <div id="email-body-preview"></div>
-        <button class="btn btn-primary mt-2" id="btn-send-email" disabled><i data-lucide="send" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> Send Email (Simulated)</button>
+        <button class="btn btn-primary mt-2" id="btn-send-email" disabled>≡ƒôñ Send Email (Simulated)</button>
       </div>
     `;
 
@@ -812,10 +723,9 @@ function renderEmailTemplates(el, apps) {
         `;
         btn.disabled = false;
         btn.onclick = () => {
-          btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> Email Sent!';
+          btn.textContent = 'Γ£à Email Sent!';
           btn.disabled = true;
           btn.className = 'btn btn-success mt-2';
-          if (window.lucide) window.lucide.createIcons();
         };
       } else {
         document.getElementById('email-body-preview').innerHTML = '';
@@ -870,8 +780,8 @@ function renderMessages(el, apps) {
 
   el.innerHTML = `
     <div class="flex" style="justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <h2 style="margin:0"><i data-lucide="message-square" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Intern Communications</h2>
-      <button class="btn btn-primary btn-sm" id="btn-new-chat"><i data-lucide="plus" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> New Conversation</button>
+      <h2 style="margin:0">≡ƒÆ¼ Intern Communications</h2>
+      <button class="btn btn-primary btn-sm" id="btn-new-chat">Γ₧ò New Conversation</button>
     </div>
   `;
 
@@ -883,7 +793,7 @@ function renderMessages(el, apps) {
     }
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    const options = allInterns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('');
+    const options = allInterns.map(i => `<option value="${i.id}">${i.name} ΓÇö ${i.department || 'Unassigned'}</option>`).join('');
     overlay.innerHTML = `
       <div class="modal">
         <h2>Start New Conversation</h2>
@@ -917,7 +827,7 @@ function renderMessages(el, apps) {
   if (!allInterns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><p style="font-weight:500">No deployed interns available to message.</p>';
+    empty.innerHTML = '<div class="icon">≡ƒô¡</div><p>No deployed interns available to message.</p>';
     el.appendChild(empty);
     return;
   }
@@ -1004,7 +914,7 @@ function renderMessages(el, apps) {
     });
 
     chatArea.innerHTML = `
-      <div style="padding:1rem;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600">${intern.name} — ${intern.department || 'Unassigned'}</div>
+      <div style="padding:1rem;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600">${intern.name} ΓÇö ${intern.department || 'Unassigned'}</div>
       <div class="chat-messages" style="flex:1;overflow-y:auto;padding:1rem">${msgsHTML || '<div class="empty-state"><p>No messages yet. Send the first message!</p></div>'}</div>
       <div class="chat-input" style="padding:1rem;border-top:1px solid var(--border)">
         <input type="text" class="form-control" id="hr-chat-msg-input" placeholder="Type a message to ${intern.name}..." />
@@ -1039,7 +949,7 @@ let activeChatSupId = null;
 
 function renderSupervisorChat(el, data) {
   const supervisors = data.users.filter(u => u.role === 'supervisor');
-  el.innerHTML = '<h2 class="mb-2"><i data-lucide="message-circle" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Supervisor Communications</h2>';
+  el.innerHTML = '<h2 class="mb-2">≡ƒæÑ Supervisor Chat</h2>';
 
   const grid = document.createElement('div');
   grid.className = 'grid-2';
@@ -1122,7 +1032,7 @@ function renderSupervisorChat(el, data) {
     });
 
     chatArea.innerHTML = `
-      <div style="padding:1rem;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600">${sup.name} — ${sup.department}</div>
+      <div style="padding:1rem;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600">${sup.name} ΓÇö ${sup.department}</div>
       <div class="chat-messages" style="flex:1;overflow-y:auto;padding:1rem">${msgsHTML || '<div class="empty-state"><p>No messages yet.</p></div>'}</div>
       <div class="chat-input" style="padding:1rem;border-top:1px solid var(--border)">
         <input type="text" class="form-control" id="hr-sup-chat-msg-input" placeholder="Type a message to ${sup.name}..." />
@@ -1152,12 +1062,12 @@ function renderSupervisorChat(el, data) {
 
 function renderDTRAccess(el, apps) {
   const interns = apps.filter(a => a.status === 'accepted');
-  el.innerHTML = '<h2 class="mb-2"><i data-lucide="clock" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> DTR Access</h2>';
+  el.innerHTML = '<h2 class="mb-2">ΓÅ▒∩╕Å DTR Access</h2>';
 
   if (!interns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<div class="icon"><i data-lucide="inbox"></i></div><p>No deployed interns</p>';
+    empty.innerHTML = '<div class="icon">≡ƒô¡</div><p>No deployed interns</p>';
     el.appendChild(empty);
     return;
   }
@@ -1170,14 +1080,14 @@ function renderDTRAccess(el, apps) {
       <label>Filter by Department</label>
       <select class="form-control" id="dtr-dept-select">
         <option value="all">All Departments</option>
-        ${getDepartments().map(d => `<option value="${d}">${d}</option>`).join('')}
+        ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
       <label>Select Intern</label>
       <select class="form-control" id="dtr-intern-select">
         <option value="" disabled selected hidden>-- Choose intern --</option>
-        ${interns.map(i => `<option value="${i.id}">${i.name} — ${i.department || 'Unassigned'}</option>`).join('')}
+        ${interns.map(i => `<option value="${i.id}">${i.name} ΓÇö ${i.department || 'Unassigned'}</option>`).join('')}
       </select>
     </div>
   `;
@@ -1254,13 +1164,13 @@ function renderDTRAccess(el, apps) {
     if (schoolActs.length) {
       const actRows = schoolActs.map(s => {
         const bc = s.status === 'approved' ? 'badge-green' : s.status === 'rejected' ? 'badge-red' : 'badge-yellow';
-        const bt = s.status === 'approved' ? '✅ Approved' : s.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
+        const bt = s.status === 'approved' ? 'Γ£à Approved' : s.status === 'rejected' ? 'Γ¥î Rejected' : 'ΓÅ│ Pending';
         const actions = s.status === 'pending'
           ? `<button class="btn btn-success btn-sm" data-said="${s.id}" data-action="approve">Approve</button> <button class="btn btn-danger btn-sm" data-said="${s.id}" data-action="reject">Reject</button>`
-          : '—';
+          : 'ΓÇö';
         const proofBtn = s.proofName
-          ? `<button class="btn btn-secondary btn-sm" style="padding:0 0.4rem;font-size:0.7rem" onclick="alert('Viewing Proof: ${s.proofName}')"><i data-lucide="eye" style="width:12px;height:12px;margin-right:4px;vertical-align:text-bottom"></i> View</button>`
-          : '—';
+          ? `<button class="btn btn-secondary btn-sm" style="padding:0 0.4rem;font-size:0.7rem" onclick="alert('Viewing Proof: ${s.proofName}')">≡ƒôä View</button>`
+          : 'ΓÇö';
         return `<tr><td>${s.date}</td><td>${s.activity}</td><td>${proofBtn}</td><td><span class="badge ${bc}">${bt}</span></td><td>${actions}</td></tr>`;
       }).join('');
 
@@ -1289,7 +1199,7 @@ function renderDTRAccess(el, apps) {
 function renderAnalytics(el, apps) {
   const quarters = [...new Set(apps.map(a => a.quarter).filter(Boolean))].sort();
 
-  el.innerHTML = '<h2 class="mb-2"><i data-lucide="bar-chart-2" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Analytics & Statistics</h2>';
+  el.innerHTML = '<h2 class="mb-2">≡ƒôè Analytics & Statistics</h2>';
 
   // Overall stats
   const total = apps.length;
@@ -1362,10 +1272,9 @@ function renderAnalytics(el, apps) {
 function renderHistoricalData(el) {
   const store = getStore();
   const legacy = store.legacyInterns || [];
-  const departments = getDepartments();
 
   el.innerHTML = `
-    <h2 class="mb-2"><i data-lucide="archive" style="width:20px;height:20px;margin-right:8px;vertical-align:text-bottom"></i> Historical Records</h2>
+    <h2 class="mb-2">≡ƒôé Historical Records</h2>
     <div class="card mb-2">
       <h3 class="mb-1">Import Old Intern Information</h3>
       <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">Manually add records for past interns. Please include their contact details and original documents.</p>
@@ -1391,7 +1300,7 @@ function renderHistoricalData(el) {
           <label>Department</label>
           <select name="department" class="form-control" required>
             <option value="">Select Dept</option>
-            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+            ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -1461,7 +1370,7 @@ function renderHistoricalData(el) {
           </select>
         </div>
         <div style="grid-column: span 2; text-align: right; margin-top:0.5rem">
-          <button type="submit" class="btn btn-primary"><i data-lucide="plus" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"></i> Add to Archive</button>
+          <button type="submit" class="btn btn-primary">Γ₧ò Add to Archive</button>
         </div>
       </form>
     </div>
@@ -1472,7 +1381,7 @@ function renderHistoricalData(el) {
         <div class="flex" style="gap:0.75rem">
           <select id="filter-legacy-dept" class="form-control" style="width:160px; font-size:0.8rem">
             <option value="all">All Departments</option>
-            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+            ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
           </select>
           <select id="filter-legacy-type" class="form-control" style="width:140px; font-size:0.8rem">
             <option value="all">All OJT Types</option>
@@ -1550,14 +1459,14 @@ function renderHistoricalData(el) {
         </td>
         <td>
           <span class="badge ${l.cocStatus === 'released' ? 'badge-green' : 'badge-gray'}">
-            ${l.cocStatus === 'released' ? '✅ Released' : '⏳ Pending'}
+            ${l.cocStatus === 'released' ? 'Γ£à Released' : 'ΓÅ│ Pending'}
           </span>
         </td>
         <td>
           <div class="flex" style="gap:0.35rem;flex-wrap:wrap">
-            <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing DTR: ${l.dtrFileName}')">📊 DTR</button>
-            <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Resume: ${l.resumeFileName}')">📄 Resume</button>
-            ${l.portfolioFileName ? `<button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Portfolio: ${l.portfolioFileName}')">🎨 Portfolio</button>` : ''}
+            <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing DTR: ${l.dtrFileName}')">≡ƒôè DTR</button>
+            <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Resume: ${l.resumeFileName}')">≡ƒôä Resume</button>
+            ${l.portfolioFileName ? `<button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="alert('Viewing Portfolio: ${l.portfolioFileName}')">≡ƒÄ¿ Portfolio</button>` : ''}
           </div>
         </td>
       </tr>

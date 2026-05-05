@@ -2,12 +2,12 @@ import { getApplication, updateAppStatus, getStore, saveStore } from '../store.j
 import { renderNavbar } from '../main.js';
 
 const STATUS_STEPS = [
-  { key: 'submitted', label: 'Submitted', icon: '📨' },
-  { key: 'viewed', label: 'Viewed', icon: '👁️' },
-  { key: 'initial_interview', label: 'Initial Interview', icon: '📋' },
-  { key: 'final_interview', label: 'Final Interview', icon: '🎯' },
-  { key: 'final_review', label: 'Final Review', icon: '📝' },
-  { key: 'result', label: 'Result', icon: '⭐' },
+  { key: 'submitted', label: 'Submitted', icon: 'mail' },
+  { key: 'viewed', label: 'Viewed', icon: 'eye' },
+  { key: 'initial_interview', label: 'Initial Interview', icon: 'clipboard-list' },
+  { key: 'final_interview', label: 'Final Interview', icon: 'target' },
+  { key: 'final_review', label: 'Final Review', icon: 'file-edit' },
+  { key: 'result', label: 'Result', icon: 'star' },
 ];
 
 const STATUS_ORDER = ['submitted', 'viewed', 'initial_interview', 'final_interview', 'final_review', 'accepted', 'failed'];
@@ -51,25 +51,27 @@ export function renderStatus(container) {
   c.style.maxWidth = '800px';
 
   // Header
-  c.innerHTML = `<div class="page-header"><h1>Application Status</h1><p>Track the progress of your internship application</p></div>`;
+  let html = `<div class="page-header"><h1>Application Status</h1><p>Track the progress of your internship application</p></div>`;
 
   // Withdrawn state
   if (app.status === 'withdrawn') {
-    c.innerHTML += `
+    html += `
       <div class="withdrawn-banner mb-2">
-        ⚠️ You have withdrawn your application. This action cannot be undone.
+        <i data-lucide="alert-triangle" style="width:16px;height:16px;vertical-align:text-bottom;margin-right:4px"></i> You have withdrawn your application. This action cannot be undone.
       </div>
       <div class="card">
         <p style="color:var(--text-secondary)">Your application was submitted on <strong>${app.appliedDate}</strong> and withdrawn by your request.</p>
       </div>
     `;
+    c.innerHTML = html;
     page.appendChild(c);
     container.appendChild(page);
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
   // Stepper
-  let stepperHTML = '<div class="stepper">';
+  html += '<div class="stepper">';
   STATUS_STEPS.forEach(step => {
     const state = getStepState(step.key, app.status);
     let detail = '';
@@ -80,11 +82,11 @@ export function renderStatus(container) {
       detail = `<div class="step-detail">${app.finalInterviewDate} at ${app.finalInterviewTime || 'TBD'}</div>`;
     }
     if (step.key === 'result') {
-      if (app.status === 'accepted') detail = `<div class="step-detail" style="color:var(--success)">Accepted ✅</div>`;
+      if (app.status === 'accepted') detail = `<div class="step-detail" style="color:var(--success)">Accepted <i data-lucide="check-circle" style="width:12px;height:12px;vertical-align:middle"></i></div>`;
       else if (app.status === 'failed') detail = `<div class="step-detail" style="color:var(--accent-red)">Not Selected</div>`;
     }
-    const circleContent = state === 'completed' ? '✓' : step.icon;
-    stepperHTML += `
+    const circleContent = state === 'completed' ? '<i data-lucide="check" style="width:20px;height:20px"></i>' : `<i data-lucide="${step.icon}" style="width:20px;height:20px"></i>`;
+    html += `
       <div class="step ${state}">
         <div class="step-circle">${circleContent}</div>
         <div class="step-label">${step.label}</div>
@@ -92,11 +94,10 @@ export function renderStatus(container) {
       </div>
     `;
   });
-  stepperHTML += '</div>';
-  c.innerHTML += stepperHTML;
+  html += '</div>';
 
   // Application info card
-  c.innerHTML += `
+  html += `
     <div class="card mt-2">
       <div class="card-header flex-between">
         <h3>Application Details</h3>
@@ -115,7 +116,7 @@ export function renderStatus(container) {
 
   // Final States
   if (app.status === 'accepted') {
-    c.innerHTML += `
+    html += `
       <div class="congrats-box mt-3">
         <div class="icon">🎉</div>
         <h2>Congratulations!</h2>
@@ -126,7 +127,7 @@ export function renderStatus(container) {
       </div>
     `;
   } else if (app.status === 'failed') {
-    c.innerHTML += `
+    html += `
       <div class="reject-box mt-3">
         <div class="icon">📄</div>
         <h2>Application Status Update</h2>
@@ -139,15 +140,17 @@ export function renderStatus(container) {
 
   // Withdraw button (only if not accepted/failed/withdrawn)
   if (!['accepted', 'failed', 'withdrawn'].includes(app.status)) {
-    c.innerHTML += `
+    html += `
       <div class="text-center mt-3">
         <button class="btn btn-danger btn-sm" id="btn-withdraw">Withdraw Application</button>
       </div>
     `;
   }
 
+  c.innerHTML = html;
   page.appendChild(c);
   container.appendChild(page);
+  if (window.lucide) window.lucide.createIcons();
 
   // Withdraw modal
   const withdrawBtn = document.getElementById('btn-withdraw');

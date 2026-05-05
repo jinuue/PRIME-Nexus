@@ -21,7 +21,7 @@ export function renderSupervisorDashboard(container) {
     { id: 'interviews', label: 'Final Interviews', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>' },
     { id: 'incoming', label: 'Incoming Interns', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
     { id: 'dtr', label: 'Deployed Interns', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><polyline points="12 9 12 13 14 15"></polyline><line x1="12" y1="2" x2="12" y2="5"></line></svg>' },
-    { id: 'chat', label: 'HR Communication', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' },
+    { id: 'chat', label: 'HR Communications', icon: '<i data-lucide="message-square" style="width:16px;height:16px"></i>' },
     { id: 'documents', label: 'Pending Signatures', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>' },
     { id: 'withdrawn', label: 'Withdrawn', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>' },
   ];
@@ -61,6 +61,7 @@ export function renderSupervisorDashboard(container) {
   });
 
   renderSectionContent(main, user);
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderSectionContent(el, user) {
@@ -95,7 +96,7 @@ function renderSectionContent(el, user) {
           <td>${a.course}</td>
           <td>${a.finalInterviewDate || 'Not set'}</td>
           <td>${formatTime12Hour(a.finalInterviewTime)}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick="alert('Viewing Resume for ${a.name}\\n\\n(Mock PDF Viewer)')"><i class="fi fi-rs-document"></i> View Resume</button></td>
+          <td><button class="btn btn-secondary btn-sm" onclick="alert('Viewing Resume for ${a.name}\\n\\n(Mock PDF Viewer)')"><i data-lucide="file-text" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> View Resume</button></td>
         </tr>
       `).join('');
       el.innerHTML += `<div class="table-wrap"><table>
@@ -178,7 +179,7 @@ function renderSectionContent(el, user) {
             <span style="font-size:0.75rem;color:var(--text-secondary)">${a.course}</span>
           </td>
           <td>${a.startDate || 'Not set'}</td>
-          <td><button class="btn btn-secondary btn-sm btn-view-dtr" data-appid="${a.id}"><i class="fi fi-rs-eye"></i> View DTR</button></td>
+          <td><button class="btn btn-secondary btn-sm btn-view-dtr" data-appid="${a.id}"><i data-lucide="eye" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> View DTR</button></td>
         </tr>
       `).join('');
 
@@ -197,14 +198,13 @@ function renderSectionContent(el, user) {
           const view = document.getElementById('sup-dtr-view');
 
           if (btn.innerText.includes('Close DTR')) {
-            btn.innerHTML = '<i class="fi fi-rs-eye"></i> View DTR';
+            btn.innerHTML = '<i data-lucide="eye" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> View DTR';
             view.innerHTML = '';
             return;
           }
 
-          // Reset other buttons
-          el.querySelectorAll('.btn-view-dtr').forEach(b => b.innerHTML = '<i class="fi fi-rs-eye"></i> View DTR');
-          btn.innerHTML = '<i class="fi fi-rs-cross-small"></i> Close DTR';
+          el.querySelectorAll('.btn-view-dtr').forEach(b => b.innerHTML = '<i data-lucide="eye" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> View DTR');
+          btn.innerHTML = '<i data-lucide="x" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> Close DTR';
 
           const appId = btn.dataset.appid;
           const intern = deployed.find(a => a.id === appId);
@@ -265,8 +265,8 @@ function renderSectionContent(el, user) {
         <tr>
           <td><strong>${item.intern.name}</strong></td>
           <td>${item.doc.name}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick="alert('Viewing document: ${item.doc.name}')">📄 View File</button></td>
-          <td><button class="btn btn-success btn-sm btn-sign" data-appid="${item.intern.id}" data-docid="${item.doc.id}">✅ Mark as Signed</button></td>
+          <td><button class="btn btn-secondary btn-sm" onclick="alert('Viewing document: ${item.doc.name}')"><i data-lucide="eye" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> View File</button></td>
+          <td><button class="btn btn-success btn-sm btn-sign" data-appid="${item.intern.id}" data-docid="${item.doc.id}"><i data-lucide="pen-tool" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom"></i> Mark as Signed</button></td>
         </tr>
       `).join('');
 

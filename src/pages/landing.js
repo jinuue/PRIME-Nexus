@@ -9,10 +9,10 @@ export function renderLanding(container) {
       <p>Apply, track your application status, and manage your internship journey all in one place.</p>
       <div class="landing-buttons">
         <button class="btn btn-yellow" style="padding: 1.25rem 3rem; font-size: 1.25rem; border-radius: 16px" onclick="location.hash='#login'" id="btn-intern-portal">
-          <i data-lucide="clipboard-list"></i> Intern Portal
+          📋 Intern Portal
         </button>
         <button class="btn btn-landing-secondary" onclick="location.hash='#login-hr'" id="btn-hr-portal">
-          <i data-lucide="lock"></i> HR Administration
+          🔐 HR Administration
         </button>
       </div>
       <div class="landing-footer">© 2026 PRIME Philippines. All rights reserved.</div>

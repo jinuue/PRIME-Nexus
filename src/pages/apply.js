@@ -158,11 +158,13 @@ export function renderApply(container) {
   // File upload display
   document.getElementById('file-cv').onchange = (e) => {
     const name = e.target.files[0]?.name;
-    document.getElementById('cv-filename').textContent = name ? '✅ ' + name : '';
+    document.getElementById('cv-filename').innerHTML = name ? '<i data-lucide="check" style="width:14px;height:14px;color:var(--success);vertical-align:middle"></i> ' + name : '';
+    if (window.lucide) window.lucide.createIcons();
   };
   document.getElementById('file-cover').onchange = (e) => {
     const name = e.target.files[0]?.name;
-    document.getElementById('cover-filename').textContent = name ? '✅ ' + name : '';
+    document.getElementById('cover-filename').innerHTML = name ? '<i data-lucide="check" style="width:14px;height:14px;color:var(--success);vertical-align:middle"></i> ' + name : '';
+    if (window.lucide) window.lucide.createIcons();
   };
 
   setupPhoneMask(document.getElementById('input-phone'));
