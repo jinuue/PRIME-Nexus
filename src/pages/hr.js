@@ -1,4 +1,4 @@
-import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, getDepartments, getCompanyDocuments, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead } from '../store.js';
+import { getStore, saveStore, updateAppStatus, getDtrEntries, getSchoolActivities, approveSchoolActivity, computeHours, formatHours, getMessages, sendMessage, signSchoolDoc, updateDocStatus, getDepartments, getCompanyDocuments, getQuarter, deployIntern, addLegacyIntern, saveEmailTemplate, deleteEmailTemplate, markMessagesAsRead, addCompanyDocument } from '../store.js';
 import { renderNavbar, setupPhoneMask } from '../main.js';
 
 let hrSection = 'applications';
@@ -166,7 +166,63 @@ function renderHRContent(content) {
 function renderDocTracking(el, apps) {
   const interns = apps.filter(a => a.status === 'accepted');
   const companyDocuments = getCompanyDocuments();
-  el.innerHTML = '<h2 class="mb-2"><i data-lucide="file-text"></i> Document Tracking Dashboard</h2>';
+  el.innerHTML = `
+    <div class="flex" style="justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h2 style="margin:0"><i data-lucide="file-check-2" style="width:24px;height:24px;margin-right:8px;vertical-align:text-bottom"></i> Document Tracking Dashboard</h2>
+      <button class="btn btn-primary" id="btn-add-company-doc"><i data-lucide="plus" style="width:18px;height:18px;margin-right:4px;vertical-align:text-bottom"></i> Add Company Document</button>
+    </div>
+  `;
+
+  document.getElementById('btn-add-company-doc').onclick = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>Add Company Document</h2>
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1rem">This document will be required for all interns.</p>
+        <form id="add-company-doc-form">
+          <div class="form-group">
+            <label>Document Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Health & Safety Protocol" required />
+          </div>
+          <div class="form-group">
+            <label>Description (Optional)</label>
+            <input type="text" name="desc" class="form-control" placeholder="Brief instruction for interns" />
+          </div>
+          <div class="form-group">
+            <label>Requirement Type</label>
+            <select name="type" class="form-control" required>
+              <option value="submit">Upload Requirement (Intern uploads file)</option>
+              <option value="sign">Signature Requirement (Intern signs acknowledgment)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Template / Form (Optional)</label>
+            <input type="file" name="template" class="form-control" style="padding:0.4rem" />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-doc">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Document</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('btn-cancel-doc').onclick = () => overlay.remove();
+    document.getElementById('add-company-doc-form').onsubmit = (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const file = e.target.querySelector('[name=template]').files[0];
+      addCompanyDocument({
+        name: fd.get('name'),
+        desc: fd.get('desc'),
+        type: fd.get('type'),
+        templateName: file ? file.name : null
+      });
+      overlay.remove();
+      renderHRContent(el);
+    };
+  };
 
   if (!interns.length) {
     const empty = document.createElement('div');
@@ -209,7 +265,7 @@ function renderDocTracking(el, apps) {
       html += `
         <div class="doc-item" style="padding:0.75rem">
           <div style="flex:1">
-            <div style="font-weight:600;font-size:0.85rem">${doc.name}</div>
+            <div style="font-weight:600;font-size:0.85rem">${doc.name} ${doc.templateName ? `<span style="font-weight:400;font-size:0.7rem;color:var(--accent-blue);margin-left:4px;cursor:pointer" onclick="alert('Downloading template: ${doc.templateName}')"><i data-lucide="download" style="width:12px;height:12px"></i> Template</span>` : ''}</div>
             <div style="font-size:0.75rem;color:var(--text-secondary)">Status: <span class="badge ${badgeCls}">${status.toUpperCase()}</span></div>
           </div>
           <select class="form-control doc-status-select" style="width:110px;font-size:0.7rem;padding:0.2rem" data-appid="${appId}" data-docid="${doc.id}">
