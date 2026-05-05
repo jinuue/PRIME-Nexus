@@ -8,17 +8,15 @@ export function renderLanding(container) {
       <h1>Internship Management System</h1>
       <p>Apply, track your application status, and manage your internship journey all in one place.</p>
       <div class="landing-buttons">
-        <button class="btn btn-yellow" style="padding: 1.25rem 3rem; font-size: 1.25rem; border-radius: 16px; display: inline-flex; align-items: center; gap: 0.5rem;" onclick="location.hash='#login'" id="btn-intern-portal">
-          <i class="fi fi-rs-document"></i> Intern Portal
+        <button class="btn btn-yellow" style="padding: 1.25rem 3rem; font-size: 1.25rem; border-radius: 16px" onclick="location.hash='#login'" id="btn-intern-portal">
+          📋 Intern Portal
         </button>
-        <button class="btn btn-landing-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;" onclick="location.hash='#login-hr'" id="btn-hr-portal">
-          <i class="fi fi-rs-lock"></i> HR Administration
-        </button>
-        <button class="btn btn-landing-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;" onclick="location.hash='#login-supervisor'" id="btn-sup-portal">
-          <i class="fi fi-rs-users"></i> Supervisor Portal
+        <button class="btn btn-landing-secondary" onclick="location.hash='#login-hr'" id="btn-hr-portal">
+          🔐 HR Administration
         </button>
       </div>
       <div class="landing-footer">© 2026 PRIME Philippines. All rights reserved.</div>
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }

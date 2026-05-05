@@ -16,7 +16,7 @@ export function renderApply(container) {
   page.innerHTML = `
     <div class="container" style="max-width:720px">
       <div class="page-header text-center">
-        <h1>📋 Internship Application</h1>
+        <h1><i data-lucide="clipboard-signature"></i> Internship Application</h1>
         <p>Fill out the form below to apply for the PRIME Philippines Internship Program</p>
       </div>
       <div class="card">
@@ -103,7 +103,7 @@ export function renderApply(container) {
           <div class="form-group">
             <label>CV / Resume</label>
             <div class="file-upload" onclick="document.getElementById('file-cv').click()">
-              <div class="icon">📄</div>
+              <div class="icon"><i data-lucide="file-text"></i></div>
               <p>Click to upload your CV/Resume</p>
               <div id="cv-filename" class="file-name"></div>
             </div>
@@ -112,7 +112,7 @@ export function renderApply(container) {
           <div class="form-group">
             <label>Cover Letter / Portfolio <span class="optional">(Optional)</span></label>
             <div class="file-upload" onclick="document.getElementById('file-cover').click()">
-              <div class="icon">📎</div>
+              <div class="icon"><i data-lucide="paperclip"></i></div>
               <p>Click to upload cover letter or portfolio</p>
               <div id="cover-filename" class="file-name"></div>
             </div>
@@ -219,4 +219,6 @@ export function renderApply(container) {
 
     location.hash = '#status';
   };
+
+  if (window.lucide) window.lucide.createIcons();
 }
