@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "seed:store": "node scripts/seed-store.js"
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
