@@ -404,6 +404,7 @@ export function computeHours(timeIn, timeOut) {
   return { regular, overtime, total: regular + overtime };
 }
 
+let initPromise;
 export function formatHours(h) {
   if (h === Math.floor(h)) return h.toString();
   const dec = h - Math.floor(h);
