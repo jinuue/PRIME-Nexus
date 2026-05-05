@@ -25,9 +25,6 @@ export const EMAIL_TEMPLATES = [
   },
 ];
 
-export async function initStore() {
-  getStore();
-}
 
 function makeId(prefix) {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
