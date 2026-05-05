@@ -1,8 +1,25 @@
+
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool } from './db.js';
+
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// Serve static files from the frontend build (dist)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+// ...existing code...
+
+// Catch-all: serve index.html for any non-API route (SPA support)
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) return res.status(404).json({ error: 'API route not found' });
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 const EXPECTED_TABLES = [
   'hr_users',
