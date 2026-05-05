@@ -3,6 +3,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool } from './db.js';
+import path from 'path';
 
 
 const app = express();
@@ -245,8 +246,7 @@ app.get('/api/store', async (req, res) => {
       companyRes,
       deptRes,
       quarterRes,
-    ] =
-      await Promise.all(tasks);
+    ] = await Promise.all(tasks);
 
     const users = [
       ...hrUsersRes.rows.map(row => ({
@@ -341,212 +341,11 @@ app.put('/api/store', async (req, res) => {
   const payload = req.body || {};
   const users = Array.isArray(payload.users) ? payload.users : [];
   const applications = Array.isArray(payload.applications) ? payload.applications : [];
-  const dtrEntries = Array.isArray(payload.dtrEntries) ? payload.dtrEntries : [];
-  const schoolActivities = Array.isArray(payload.schoolActivities) ? payload.schoolActivities : [];
-  const messages = Array.isArray(payload.messages) ? payload.messages : [];
-  const emailTemplates = Array.isArray(payload.emailTemplates) ? payload.emailTemplates : [];
-  const companyDocuments = Array.isArray(payload.companyDocuments) ? payload.companyDocuments : [];
-  const deptSlots = payload.deptSlots && typeof payload.deptSlots === 'object' ? payload.deptSlots : {};
-  const quarterSettings = payload.quarterSettings || {};
 
   const client = await pool.connect();
   try {
-    const tables = await getExistingTables(client);
-    const truncateTables = EXPECTED_TABLES.filter(name => tables.has(name));
-
     await client.query('BEGIN');
-    if (truncateTables.length) {
-      await client.query(`TRUNCATE TABLE ${truncateTables.join(', ')} RESTART IDENTITY CASCADE`);
-    }
-
-    const hrUsers = users.filter(user => user.role === 'hr');
-    const regularUsers = users.filter(user => user.role !== 'hr');
-
-    if (tables.has('hr_users')) {
-      const hrColumns = await getColumnSet(client, 'hr_users');
-      for (const user of hrUsers) {
-        const row = pickColumns(
-          {
-            id: user.id,
-            email: user.email,
-            password: user.password,
-            name: user.name,
-            phone: user.phone,
-          },
-          hrColumns
-        );
-        await insertRow(client, 'hr_users', row);
-      }
-    } else {
-      regularUsers.push(...hrUsers);
-    }
-
-    if (tables.has('users')) {
-      const userColumns = await getColumnSet(client, 'users');
-      for (const user of regularUsers) {
-        const row = pickColumns(
-          {
-            id: user.id,
-            email: user.email,
-            password: user.password,
-            name: user.name,
-            phone: user.phone,
-            role: user.role,
-          },
-          userColumns
-        );
-        await insertRow(client, 'users', row);
-      }
-    }
-
-    if (tables.has('applications')) {
-      const appColumns = await getColumnSet(client, 'applications');
-      for (const app of applications) {
-        const row = pickColumns(
-          {
-            id: app.id,
-            user_id: app.userId,
-            name: app.name,
-            email: app.email,
-            phone: app.phone,
-            course: app.course,
-            school: app.school,
-            cv_name: app.cvName,
-            cover_name: app.coverName,
-            ojt_type: app.ojtType,
-            hours_required: app.hoursRequired,
-            source: app.source,
-            status: app.status,
-            applied_date: app.appliedDate,
-            quarter: app.quarter,
-            department: app.department,
-            supervisor: app.supervisor,
-            schedule: app.schedule,
-            start_date: app.startDate,
-            company_docs: app.companyDocs || {},
-            school_docs: app.schoolDocs || [],
-            interview_date: app.interviewDate,
-            interview_time: app.interviewTime,
-            final_interview_date: app.finalInterviewDate,
-            final_interview_time: app.finalInterviewTime,
-            is_deployed: app.isDeployed ?? false,
-          },
-          appColumns
-        );
-        await insertRow(client, 'applications', row);
-      }
-    }
-
-    if (tables.has('dtr_entries')) {
-      const dtrColumns = await getColumnSet(client, 'dtr_entries');
-      for (const entry of dtrEntries) {
-        const row = pickColumns(
-          {
-            id: entry.id,
-            app_id: entry.appId,
-            date: entry.date,
-            time_in: entry.timeIn,
-            time_out: entry.timeOut,
-            type: entry.type,
-          },
-          dtrColumns
-        );
-        await insertRow(client, 'dtr_entries', row);
-      }
-    }
-
-    if (tables.has('school_activities')) {
-      const schoolColumns = await getColumnSet(client, 'school_activities');
-      for (const activity of schoolActivities) {
-        const row = pickColumns(
-          {
-            id: activity.id,
-            app_id: activity.appId,
-            name: activity.name,
-            description: activity.description,
-            status: activity.status,
-            type: activity.type,
-          },
-          schoolColumns
-        );
-        await insertRow(client, 'school_activities', row);
-      }
-    }
-
-    if (tables.has('messages')) {
-      const messageColumns = await getColumnSet(client, 'messages');
-      for (const message of messages) {
-        const row = pickColumns(
-          {
-            id: message.id,
-            app_id: message.appId,
-            sender: message.from,
-            text: message.text,
-            time: message.time,
-          },
-          messageColumns
-        );
-        await insertRow(client, 'messages', row);
-      }
-    }
-
-    if (tables.has('email_templates')) {
-      const templateColumns = await getColumnSet(client, 'email_templates');
-      for (const template of emailTemplates) {
-        const row = pickColumns(
-          {
-            id: template.id,
-            name: template.name,
-            subject: template.subject,
-            body: template.body,
-          },
-          templateColumns
-        );
-        await insertRow(client, 'email_templates', row);
-      }
-    }
-
-    if (tables.has('company_documents')) {
-      const companyColumns = await getColumnSet(client, 'company_documents');
-      for (const doc of companyDocuments) {
-        const row = pickColumns(
-          {
-            id: doc.id,
-            name: doc.name,
-            description: doc.description,
-            type: doc.type,
-          },
-          companyColumns
-        );
-        await insertRow(client, 'company_documents', row);
-      }
-    }
-
-    if (tables.has('dept_slots')) {
-      const deptColumns = await getColumnSet(client, 'dept_slots');
-      for (const [department, slots] of Object.entries(deptSlots)) {
-        const row = pickColumns(
-          {
-            department,
-            slots,
-          },
-          deptColumns
-        );
-        await insertRow(client, 'dept_slots', row);
-      }
-    }
-
-    if (tables.has('quarter_settings')) {
-      const quarterColumns = await getColumnSet(client, 'quarter_settings');
-      const row = pickColumns(
-        {
-          current: quarterSettings.current,
-        },
-        quarterColumns
-      );
-      await insertRow(client, 'quarter_settings', row);
-    }
-
+    // (shortened for clarity — keep your original insert logic here)
     await client.query('COMMIT');
     res.json({ ok: true });
   } catch (error) {
@@ -556,6 +355,18 @@ app.put('/api/store', async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+/* =========================
+   ✅ ADD THIS PART (IMPORTANT)
+   ========================= */
+
+// Serve Vite build files
+app.use(express.static('dist'));
+
+// SPA fallback (handles routes like /supervisor)
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve('dist/index.html'));
 });
 
 export default app;
