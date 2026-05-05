@@ -1,29 +1,5 @@
 // Local API driven store
 
-const STORE_KEY = 'prime_ims_data';
-
-export const EMAIL_TEMPLATES = [
-  {
-    id: 'initial_invite', name: 'Initial Interview Invitation', subject: 'PRIME Philippines — Initial Interview Schedule',
-    body: `Dear {name},\n\nThank you for your interest in the PRIME Philippines Internship Program.\n\nWe are pleased to inform you that you have been shortlisted for an Initial Interview. Please see the details below:\n\nDate: {date}\nTime: {time}\nMode: {mode}\n\nPlease confirm your attendance by replying to this email.\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'final_invite', name: 'Final Interview Invitation', subject: 'PRIME Philippines — Final Interview Schedule',
-    body: `Dear {name},\n\nCongratulations on passing the Initial Interview!\n\nYou are now scheduled for a Final Interview. Details are as follows:\n\nDate: {date}\nTime: {time}\nMode: {mode}\n\nPlease prepare any additional documents that may be required.\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'acceptance', name: 'Acceptance Letter', subject: 'PRIME Philippines — Internship Acceptance',
-    body: `Dear {name},\n\nWe are delighted to inform you that you have been accepted into the PRIME Philippines Internship Program!\n\nYou will be assigned to the {department} Department. Your internship details will be available in the Intern Portal.\n\nPlease log in to your account to view your deployment information and complete the required documents.\n\nWelcome to the team!\n\nBest regards,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'rejection', name: 'Application Update', subject: 'PRIME Philippines — Application Status Update',
-    body: `Dear {name},\n\nThank you for taking the time to apply for the PRIME Philippines Internship Program.\n\nAfter careful consideration, we regret to inform you that we will not be moving forward with your application at this time. This decision does not reflect on your abilities, and we encourage you to apply again in the future.\n\nWe wish you the best in your academic and professional endeavors.\n\nSincerely,\nHR Department\nPRIME Philippines`
-  },
-  {
-    id: 'doc_reminder', name: 'Document Reminder', subject: 'PRIME Philippines — Document Submission Reminder',
-    body: `Dear {name},\n\nThis is a friendly reminder to submit the required documents for your internship at PRIME Philippines.\n\nPending documents can be viewed and uploaded through your Intern Portal dashboard.\n\nPlease submit them at your earliest convenience to avoid delays in your onboarding process.\n\nThank you,\nHR Department\nPRIME Philippines`
-  },
-];
 
 
 function makeId(prefix) {
