@@ -32,19 +32,19 @@ export function renderInternDashboard(container) {
 
   const unreadCount = getMessages(app.id).filter(m => m.from === 'hr' && !m.read).length;
   const chatLabel = unreadCount > 0 
-    ? `💬 HR Comm <span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:4px">${unreadCount}</span>` 
-    : '💬 HR Comm';
+    ? `<i data-lucide="message-square" style="width:14px;height:14px;margin-right:4px"></i> HR Communications <span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:4px">${unreadCount}</span>` 
+    : '<i data-lucide="message-square" style="width:14px;height:14px;margin-right:4px"></i> HR Communications';
 
   // Tabs
   let tabs = [
-    { key: 'deployment', label: '📍 Deployment' },
-    { key: 'documents', label: '📄 Documents' },
+    { key: 'deployment', label: '<i data-lucide="map-pin" style="width:14px;height:14px;margin-right:4px"></i> Deployment' },
+    { key: 'documents', label: '<i data-lucide="file-text" style="width:14px;height:14px;margin-right:4px"></i> Documents' },
     { key: 'chat', label: chatLabel },
   ];
   
   if (app.isDeployed) {
-    tabs.push({ key: 'dtr', label: '⏱️ DTR' });
-    tabs.push({ key: 'hours', label: '📊 Hours' });
+    tabs.push({ key: 'dtr', label: '<i data-lucide="clock" style="width:14px;height:14px;margin-right:4px"></i> DTR' });
+    tabs.push({ key: 'hours', label: '<i data-lucide="bar-chart-2" style="width:14px;height:14px;margin-right:4px"></i> Hours' });
   }
 
   let tabsHTML = '<div class="tabs">';
@@ -64,6 +64,8 @@ export function renderInternDashboard(container) {
       renderInternDashboard(document.getElementById('app'));
     };
   });
+
+  if (window.lucide) window.lucide.createIcons();
 
   const content = document.getElementById('tab-content');
   switch (activeTab) {
@@ -91,7 +93,7 @@ function renderDeployment(el, app) {
     ${!app.isDeployed ? `
       <div class="card mt-2" style="border-left: 4px solid var(--accent-yellow)">
         <div style="display:flex;gap:1rem;align-items:center">
-          <div style="font-size:2rem">⏳</div>
+          <div style="font-size:2rem;color:var(--warning)"><i data-lucide="clock" style="width:40px;height:40px"></i></div>
           <div>
             <h3 style="color:var(--primary)">Deployment Pending</h3>
             <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.25rem">Your internship has been accepted, but you are not yet officially deployed to the office. Please coordinate with HR and ensure all your documents are submitted.</p>
@@ -101,7 +103,7 @@ function renderDeployment(el, app) {
     ` : `
       <div class="card mt-2" style="border-left: 4px solid var(--success)">
         <div style="display:flex;gap:1rem;align-items:center">
-          <div style="font-size:2rem">🚀</div>
+          <div style="font-size:2rem;color:var(--success)"><i data-lucide="rocket" style="width:40px;height:40px"></i></div>
           <div>
             <h3 style="color:var(--success)">Officially Deployed</h3>
             <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.25rem">You are now officially rendering hours in the office. You can now use the DTR and Hours tracking features.</p>
@@ -169,6 +171,7 @@ function renderDeployment(el, app) {
       };
     };
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderDocuments(el, app) {
@@ -195,7 +198,7 @@ function renderDocuments(el, app) {
     docs.forEach(doc => {
       const status = companyDocs[doc.id] || 'pending';
       const badgeClass = status === 'signed' ? 'badge-green' : status === 'submitted' ? 'badge-blue' : 'badge-gray';
-      const badgeText = status === 'signed' ? '✅ Signed' : status === 'submitted' ? '📤 Submitted' : '⏳ Pending';
+      const badgeText = status === 'signed' ? '<i data-lucide="check-circle" style="width:12px;height:12px"></i> Signed' : status === 'submitted' ? '<i data-lucide="upload" style="width:12px;height:12px"></i> Submitted' : '<i data-lucide="clock" style="width:12px;height:12px"></i> Pending';
       html += `
         <div class="doc-item">
           <div>
@@ -232,7 +235,7 @@ function renderDocuments(el, app) {
       html += '<div class="doc-list">';
       schoolDocs.forEach(doc => {
         const badgeClass = doc.status === 'signed' ? 'badge-green' : doc.status === 'submitted' ? 'badge-blue' : 'badge-gray';
-        const badgeText = doc.status === 'signed' ? `✅ Signed by ${doc.signedBy}` : '📤 Submitted — Awaiting Signature';
+        const badgeText = doc.status === 'signed' ? `<i data-lucide="check-circle" style="width:12px;height:12px"></i> Signed by ${doc.signedBy}` : '<i data-lucide="upload" style="width:12px;height:12px"></i> Submitted — Awaiting Signature';
         html += `
           <div class="doc-item">
             <div>
@@ -263,6 +266,7 @@ function renderDocuments(el, app) {
 
   document.getElementById('sub-company').onclick = () => { el.dataset.subTab = 'company'; renderDocuments(el, app); };
   document.getElementById('sub-school').onclick = () => { el.dataset.subTab = 'school'; renderDocuments(el, app); };
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderChatTab(el, app) {
@@ -311,6 +315,7 @@ function renderChatTab(el, app) {
   document.getElementById('chat-msg-input').onkeydown = (e) => {
     if (e.key === 'Enter') document.getElementById('btn-send-msg').click();
   };
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderDTR(el, app) {
@@ -431,8 +436,8 @@ function renderDTR(el, app) {
             <tbody>
               ${schoolActivities.map(s => {
                 const bc = s.status === 'approved' ? 'badge-green' : s.status === 'rejected' ? 'badge-red' : 'badge-yellow';
-                const bt = s.status === 'approved' ? '✅ Approved' : s.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
-                return `<tr><td>${s.date}</td><td>${s.activity}</td><td>8</td><td>${s.proofName || '📎 Uploaded'}</td><td><span class="badge ${bc}">${bt}</span></td></tr>`;
+                const bt = s.status === 'approved' ? '<i data-lucide="check-circle" style="width:12px;height:12px"></i> Approved' : s.status === 'rejected' ? '<i data-lucide="x-circle" style="width:12px;height:12px"></i> Rejected' : '<i data-lucide="clock" style="width:12px;height:12px"></i> Pending';
+                return `<tr><td>${s.date}</td><td>${s.activity}</td><td>8</td><td>${s.proofName || '<i data-lucide="paperclip" style="width:12px;height:12px"></i> Uploaded'}</td><td><span class="badge ${bc}">${bt}</span></td></tr>`;
               }).join('')}
             </tbody>
           </table>
@@ -469,6 +474,7 @@ function renderDTR(el, app) {
       renderInternDashboard(document.getElementById('app'));
     };
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderHoursTab(el, app) {
@@ -522,4 +528,5 @@ function renderHoursTab(el, app) {
       </div>
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }
