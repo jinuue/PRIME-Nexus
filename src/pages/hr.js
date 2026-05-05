@@ -21,30 +21,30 @@ export function renderHRDashboard(container) {
     {
       title: 'Recruitment',
       items: [
-        { key: 'applications', icon: '📋', label: 'Applications' },
-        { key: 'masterlist_applicants', icon: '👤', label: 'Applicants List' },
+        { key: 'applications', icon: '<i data-lucide="clipboard-list"></i>', label: 'Applications' },
+        { key: 'masterlist_applicants', icon: '<i data-lucide="users"></i>', label: 'Applicants List' },
       ]
     },
     {
       title: 'Intern Management',
       items: [
-        { key: 'masterlist_interns', icon: '🎓', label: 'Deployed Interns' },
-        { key: 'docs', icon: '📄', label: 'Document Tracking' },
-        { key: 'dtr', icon: '⏱️', label: 'DTR Access' },
+        { key: 'masterlist_interns', icon: '<i data-lucide="graduation-cap"></i>', label: 'Deployed Interns' },
+        { key: 'docs', icon: '<i data-lucide="file-text"></i>', label: 'Document Tracking' },
+        { key: 'dtr', icon: '<i data-lucide="clock"></i>', label: 'DTR Access' },
       ]
     },
     {
       title: 'Communications',
       items: [
-        { key: 'email', icon: '✉️', label: 'Email Templates' },
-        { key: 'messages', icon: '💬', label: 'Communications' },
+        { key: 'email', icon: '<i data-lucide="mail"></i>', label: 'Email Templates' },
+        { key: 'messages', icon: '<i data-lucide="message-square"></i>', label: 'Communications' },
       ]
     },
     {
       title: 'Records & Insights',
       items: [
-        { key: 'historical', icon: '📂', label: 'Historical Records' },
-        { key: 'analytics', icon: '📊', label: 'Analytics' },
+        { key: 'historical', icon: '<i data-lucide="folder-open"></i>', label: 'Historical Records' },
+        { key: 'analytics', icon: '<i data-lucide="bar-chart-2"></i>', label: 'Analytics' },
       ]
     }
   ];

@@ -22,6 +22,14 @@ export const DEPARTMENTS = [
   'Admin Support',
 ];
 
+const STORE_KEY = 'prime_nexus_store_v1';
+
+const EMAIL_TEMPLATES = [
+  { id: 'tmpl1', name: 'Application Received', subject: 'Application Received - PRIME Philippines', body: 'Dear {name},\n\nWe have received your application for the internship program. We will review it and get back to you soon.' },
+  { id: 'tmpl2', name: 'Interview Invitation', subject: 'Interview Invitation - PRIME Philippines', body: 'Dear {name},\n\nWe would like to invite you for an initial interview on {date} at {time}.' },
+  { id: 'tmpl3', name: 'Acceptance Letter', subject: 'Internship Acceptance - PRIME Philippines', body: 'Congratulations {name}!\n\nYou have been accepted into the PRIME Philippines Internship Program.' }
+];
+
 const COMPANY_DOCUMENTS = [
   { id: 'doc1', name: 'Non-Disclosure Agreement (NDA)', desc: 'Must be signed before deployment', type: 'sign' },
   { id: 'doc2', name: 'Internship Agreement', desc: 'Terms and conditions of the internship', type: 'sign' },
@@ -355,6 +363,34 @@ export function formatHours(h) {
   return h.toFixed(1).replace(/\.0$/, '');
 }
 
+export async function initStore() {
+  if (!initPromise) {
+    initPromise = (async () => {
+      storeCache = getStore();
+    })();
+  }
+  return initPromise;
+}
+
+function normalizeStore(data) {
+  // Ensure all required fields exist
+  if (!data.applications) data.applications = [];
+  if (!data.dtrEntries) data.dtrEntries = [];
+  if (!data.messages) data.messages = [];
+  if (!data.schoolActivities) data.schoolActivities = [];
+  return data;
+}
+
+function queuePersist() {
+  persistChain = persistChain.then(() => {
+    localStorage.setItem(STORE_KEY, JSON.stringify(storeCache));
+  });
+}
+
+function buildEmptyStore() {
+  return { ...SEED_DATA };
+}
+
 export function getDepartments() {
   const data = getStore();
   return Object.keys(data.deptSlots || {});
@@ -362,8 +398,9 @@ export function getDepartments() {
 
 export function getCompanyDocuments() {
   const data = getStore();
-  return (data.companyDocuments || []).map(doc => ({
+  return COMPANY_DOCUMENTS.map(doc => ({
     ...doc,
     desc: doc.desc || doc.description || '',
   }));
 }
+
