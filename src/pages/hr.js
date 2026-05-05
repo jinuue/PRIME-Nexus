@@ -21,30 +21,30 @@ export function renderHRDashboard(container) {
     {
       title: 'Recruitment',
       items: [
-        { key: 'applications', icon: '📋', label: 'Applications' },
-        { key: 'masterlist_applicants', icon: '👤', label: 'Applicants List' },
+        { key: 'applications', icon: '<i data-lucide="clipboard-list"></i>', label: 'Applications' },
+        { key: 'masterlist_applicants', icon: '<i data-lucide="users"></i>', label: 'Applicants List' },
       ]
     },
     {
       title: 'Intern Management',
       items: [
-        { key: 'masterlist_interns', icon: '🎓', label: 'Deployed Interns' },
-        { key: 'docs', icon: '📄', label: 'Document Tracking' },
-        { key: 'dtr', icon: '⏱️', label: 'DTR Access' },
+        { key: 'masterlist_interns', icon: '<i data-lucide="graduation-cap"></i>', label: 'Deployed Interns' },
+        { key: 'docs', icon: '<i data-lucide="file-text"></i>', label: 'Document Tracking' },
+        { key: 'dtr', icon: '<i data-lucide="clock"></i>', label: 'DTR Access' },
       ]
     },
     {
       title: 'Communications',
       items: [
-        { key: 'email', icon: '✉️', label: 'Email Templates' },
-        { key: 'messages', icon: '💬', label: 'Communications' },
+        { key: 'email', icon: '<i data-lucide="mail"></i>', label: 'Email Templates' },
+        { key: 'messages', icon: '<i data-lucide="message-square"></i>', label: 'Communications' },
       ]
     },
     {
       title: 'Records & Insights',
       items: [
-        { key: 'historical', icon: '📂', label: 'Historical Records' },
-        { key: 'analytics', icon: '📊', label: 'Analytics' },
+        { key: 'historical', icon: '<i data-lucide="folder-open"></i>', label: 'Historical Records' },
+        { key: 'analytics', icon: '<i data-lucide="bar-chart-2"></i>', label: 'Analytics' },
       ]
     }
   ];
@@ -52,8 +52,8 @@ export function renderHRDashboard(container) {
   sidebar.innerHTML = groups.map(g => `
     <div class="hr-sidebar-section">${g.title}</div>
     ${g.items.map(s => `
-      <button class="hr-sidebar-link ${hrSection === s.key ? 'active' : ''}" style="display:flex;align-items:center;width:100%" data-section="${s.key}">
-        <span style="margin-right:0.5rem">${s.icon}</span> <span>${s.label}</span>
+      <button class="hr-sidebar-link ${hrSection === s.key ? 'active' : ''}" data-section="${s.key}">
+        ${s.icon} <span>${s.label}</span>
       </button>
     `).join('')}
   `).join('');
@@ -77,6 +77,7 @@ export function renderHRDashboard(container) {
   });
 
   renderHRContent(content);
+  if (window.lucide) window.lucide.createIcons();
 }
 
 export function updateSidebarBadge() {
@@ -129,12 +130,12 @@ function renderHRContent(content) {
 function renderDocTracking(el, apps) {
   const interns = apps.filter(a => a.status === 'accepted');
   const companyDocuments = getCompanyDocuments();
-  el.innerHTML = '<h2 class="mb-2">📄 Document Tracking Dashboard</h2>';
+  el.innerHTML = '<h2 class="mb-2"><i data-lucide="file-text"></i> Document Tracking Dashboard</h2>';
 
   if (!interns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<div class="icon">📭</div><p>No deployed interns</p>';
+    empty.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><path d="M12 14l9-5-9-5-9 5 9 5z"></path></svg><p style="font-weight:500">No deployed interns</p>';
     el.appendChild(empty);
     return;
   }
@@ -208,7 +209,7 @@ function renderDocTracking(el, apps) {
       });
       html += '</div>';
     } else {
-      html += '<div class="empty-state" style="padding:1rem"><p>No school documents uploaded</p></div>';
+      html += '<div class="empty-state" style="padding:1rem"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><p style="font-weight:500">No school documents uploaded</p></div>';
     }
 
     html += `
@@ -272,7 +273,7 @@ function filterApps(apps) {
 let hrAppTab = 'submitted';
 
 function renderApplications(el, apps, data) {
-  el.innerHTML = '<h2 class="mb-2">📋 Application Management</h2>';
+  el.innerHTML = '<h2 class="mb-2"><i data-lucide="clipboard-list"></i> Application Management</h2>';
   const departments = getDepartments();
 
   // Slots Summary (Editable)
@@ -284,10 +285,10 @@ function renderApplications(el, apps, data) {
       <h3>Intern Slots per Department</h3>
       <div class="flex" style="gap: 0.5rem">
         <span class="badge badge-blue">Hired / Target</span>
-        <button class="btn btn-primary btn-sm" id="btn-save-slots">💾 Save Slots</button>
+        <button class="btn btn-primary btn-sm" id="btn-add-dept"><i data-lucide="plus"></i> Add Department</button>
       </div>
     </div>
-    <div class="grid-2" style="grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
+    <div class="grid-2" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
   `;
 
   departments.forEach(dept => {
@@ -295,11 +296,12 @@ function renderApplications(el, apps, data) {
     const total = data.deptSlots?.[dept] || 0;
     const isFull = hired >= total && total > 0;
     slotsHTML += `
-      <div class="stat-card" style="padding:0.75rem; border-color: ${isFull ? 'var(--accent-red)' : 'var(--border)'}">
-        <div class="stat-label" style="font-size:0.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${dept}">${dept}</div>
-        <div class="flex" style="align-items: center; gap: 0.5rem">
-          <span style="font-size: 0.9rem; font-weight: 700">${hired} / </span>
-          <input type="number" class="form-control" style="width: 50px; padding: 0.2rem; font-size: 0.9rem" data-dept="${dept}" value="${total}" min="0" />
+      <div class="stat-card" style="padding:1.25rem; border-color: ${isFull ? 'var(--success)' : 'var(--border)'}; display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+        <div style="font-size:0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center;" title="${dept}">${dept}</div>
+        <div class="slot-edit-btn" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--surface2); padding: 0.6rem 1rem; border-radius: var(--radius); width: 100%; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent;" data-dept="${dept}" data-total="${total}" onmouseover="this.style.borderColor='var(--accent-blue)'; this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='scale(1)'" title="Click to edit slots">
+          <span style="font-size: 1.25rem; font-weight: 800; color: ${isFull ? 'var(--success)' : 'var(--text)'}">${hired}</span>
+          <span style="color: var(--text-secondary); font-weight: 600; margin: 0 0.25rem">/</span>
+          <span style="font-size: 1.25rem; font-weight: 800; color: var(--primary)">${total}</span>
         </div>
       </div>
     `;
@@ -308,15 +310,86 @@ function renderApplications(el, apps, data) {
   slotsDiv.innerHTML = slotsHTML;
   el.appendChild(slotsDiv);
 
-  document.getElementById('btn-save-slots').onclick = () => {
-    const inputs = slotsDiv.querySelectorAll('input[data-dept]');
-    const newSlots = {};
-    inputs.forEach(inp => { newSlots[inp.dataset.dept] = parseInt(inp.value) || 0; });
-    const currentStore = getStore();
-    currentStore.deptSlots = newSlots;
-    saveStore(currentStore);
-    alert('Department slots updated successfully!');
-    renderHRContent(document.querySelector('.hr-content'));
+  slotsDiv.querySelectorAll('.slot-edit-btn').forEach(btn => {
+    btn.onclick = () => {
+      const dept = btn.dataset.dept;
+      const current = btn.dataset.total;
+      
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal" style="max-width: 400px">
+          <h2 style="margin-bottom: 0.5rem; color: var(--primary)">Update Intern Slots</h2>
+          <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1.25rem">Set the target number of slots for <strong>${dept}</strong>.</p>
+          <form id="edit-slots-form">
+            <div class="form-group">
+              <label>Target Slots</label>
+              <input type="number" class="form-control" name="slots" value="${current}" min="0" required />
+            </div>
+            <div class="modal-actions" style="margin-top:1.5rem">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      document.getElementById('btn-cancel-edit').onclick = () => overlay.remove();
+      document.getElementById('edit-slots-form').onsubmit = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const parsed = parseInt(fd.get('slots')) || 0;
+        const currentStore = getStore();
+        if (!currentStore.deptSlots) currentStore.deptSlots = {};
+        currentStore.deptSlots[dept] = parsed;
+        saveStore(currentStore);
+        overlay.remove();
+        renderHRContent(document.querySelector('.hr-content'));
+      };
+    };
+  });
+
+  document.getElementById('btn-add-dept').onclick = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width: 400px">
+        <h2 style="margin-bottom: 0.5rem; color: var(--primary)">Add Department</h2>
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1.25rem">Create a new department and set its target slots.</p>
+        <form id="add-dept-form">
+          <div class="form-group">
+            <label>Department Name</label>
+            <input type="text" class="form-control" name="deptName" placeholder="e.g. Finance" required />
+          </div>
+          <div class="form-group">
+            <label>Target Slots</label>
+            <input type="number" class="form-control" name="slots" value="1" min="0" required />
+          </div>
+          <div class="modal-actions" style="margin-top:1.5rem">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i data-lucide="plus"></i> Add Department</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('btn-cancel-add').onclick = () => overlay.remove();
+    document.getElementById('add-dept-form').onsubmit = (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const deptName = fd.get('deptName').trim();
+      const parsed = parseInt(fd.get('slots')) || 0;
+      if (deptName) {
+        const currentStore = getStore();
+        if (!currentStore.deptSlots) currentStore.deptSlots = {};
+        currentStore.deptSlots[deptName] = parsed;
+        saveStore(currentStore);
+        overlay.remove();
+        renderHRContent(document.querySelector('.hr-content'));
+      }
+    };
   };
 
   const filterDiv = document.createElement('div');
@@ -343,7 +416,7 @@ function renderApplications(el, apps, data) {
   if (!activeGroup.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = `<div class="icon">📭</div><p>No applications found in "${formatSt(hrAppTab)}"</p>`;
+    empty.innerHTML = `<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg><p style="font-weight:500">No applications found in "${formatSt(hrAppTab)}"</p>`;
     el.appendChild(empty);
     return;
   }
@@ -368,8 +441,8 @@ function renderApplications(el, apps, data) {
           <span style="font-size:0.78rem">${a.school || 'N/A'}<br>${a.course || 'N/A'}</span><br>
           <div class="flex mt-1" style="gap: 0.25rem">
             <span class="badge ${a.ojtType === 'required' ? 'badge-blue' : 'badge-yellow'}">${a.ojtType === 'required' ? 'Required' : 'Voluntary'}</span>
-            ${a.cvName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing CV: ${a.cvName}')">📄 CV</button>` : ''}
-            ${a.coverName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing Portfolio: ${a.coverName}')">📎 Portfolio</button>` : ''}
+            ${a.cvName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing CV: ${a.cvName}')"><i data-lucide="file-text"></i> CV</button>` : ''}
+            ${a.coverName ? `<button class="btn btn-secondary btn-sm" style="padding: 0 0.4rem; font-size: 0.7rem" onclick="alert('Viewing Portfolio: ${a.coverName}')"><i data-lucide="paperclip"></i> Portfolio</button>` : ''}
           </div>
         </td>
         <td><span style="font-size:0.8rem">${a.appliedDate}<br>${a.quarter || ''}</span></td>
@@ -539,7 +612,7 @@ function renderMasterlist(el, apps, type) {
   if (!filtered.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = `<div class="icon">${isInterns ? '🎓' : '📭'}</div><p>No ${isInterns ? 'deployed interns' : 'applicants'} found</p>`;
+    empty.innerHTML = `<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><p style="font-weight:500">No ${isInterns ? 'deployed interns' : 'applicants'} found</p>`;
     el.appendChild(empty);
     return;
   }
@@ -749,7 +822,7 @@ function renderMessages(el, apps) {
   if (!allInterns.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<div class="icon">📭</div><p>No deployed interns available to message.</p>';
+    empty.innerHTML = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><p style="font-weight:500">No deployed interns available to message.</p>';
     el.appendChild(empty);
     return;
   }
