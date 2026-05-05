@@ -18,12 +18,12 @@ export function renderSupervisorDashboard(container) {
   sidebar.className = 'hr-sidebar';
 
   const sections = [
-    { id: 'interviews', label: 'Final Interviews', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>' },
-    { id: 'incoming', label: 'Incoming Interns', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
-    { id: 'dtr', label: 'Deployed Interns', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><polyline points="12 9 12 13 14 15"></polyline><line x1="12" y1="2" x2="12" y2="5"></line></svg>' },
+    { id: 'interviews', label: 'Final Interviews', icon: '<i data-lucide="users" style="width:16px;height:16px"></i>' },
+    { id: 'incoming', label: 'Incoming Interns', icon: '<i data-lucide="user-plus" style="width:16px;height:16px"></i>' },
+    { id: 'dtr', label: 'Deployed Interns', icon: '<i data-lucide="clock" style="width:16px;height:16px"></i>' },
     { id: 'chat', label: 'HR Communications', icon: '<i data-lucide="message-square" style="width:16px;height:16px"></i>' },
-    { id: 'documents', label: 'Pending Signatures', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>' },
-    { id: 'withdrawn', label: 'Withdrawn', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>' },
+    { id: 'documents', label: 'Pending Signatures', icon: '<i data-lucide="pen-tool" style="width:16px;height:16px"></i>' },
+    { id: 'withdrawn', label: 'Withdrawn', icon: '<i data-lucide="x-circle" style="width:16px;height:16px"></i>' },
   ];
 
   const store = getStore();
@@ -38,7 +38,7 @@ export function renderSupervisorDashboard(container) {
     }
     return `
       <button class="hr-sidebar-link ${activeSection === s.id ? 'active' : ''}" style="display:flex;align-items:center;width:100%" data-section="${s.id}">
-        <span style="margin-right:0.5rem">${s.icon}</span> <span>${s.label}</span> ${badge}
+        <span style="margin-right:0.5rem;display:flex;align-items:center">${s.icon}</span><span>${s.label}</span>${badge}
       </button>
       `;
   }).join('')}
