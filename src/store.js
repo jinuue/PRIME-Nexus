@@ -1,3 +1,5 @@
+// Legacy/local helpers still needed for UI state
+export { getStore } from './store_temp.js';
 import { apiLogin, apiRegister } from './api.js';
 // Local API driven store
 
@@ -404,22 +406,4 @@ export function getDepartments() {
   return Object.keys(data.deptSlots || {});
 }
 
-export function getCompanyDocuments() {
-  const data = getStore();
-  return COMPANY_DOCUMENTS.map(doc => ({
-    ...doc,
-    desc: doc.desc || doc.description || '',
-  }));
-}
 
-export function addCompanyDocument(doc) {
-  const data = getStore();
-  if (!data.companyDocuments) data.companyDocuments = [...COMPANY_DOCUMENTS];
-  const newDoc = {
-    id: makeId('cdoc'),
-    ...doc
-  };
-  data.companyDocuments.push(newDoc);
-  saveStore(data);
-  return newDoc;
-}
