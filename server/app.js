@@ -1,4 +1,4 @@
-
+import express from 'express'; // or: const express = require('express');
 
 // --- School Activities ---
 // Get all school activities for an application
