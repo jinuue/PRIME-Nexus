@@ -3,7 +3,10 @@ import { renderNavbar, setupPhoneMask } from '../main.js';
 
 export function renderApply(container) {
   const user = window.APP.user;
-  if (!user) { location.hash = '#login'; return; }
+  if (!user || !user.id || !user.name) {
+    location.hash = '#login';
+    return;
+  }
 
   // Check if already applied
   const existing = getApplication(user.id);
@@ -24,7 +27,7 @@ export function renderApply(container) {
           <div class="form-row">
             <div class="form-group">
               <label>Full Name</label>
-              <input type="text" name="name" class="form-control" value="${user.name}" required id="input-fullname" />
+              <input type="text" name="name" class="form-control" value="${user.name || ''}" required id="input-fullname" />
             </div>
             <div class="form-group">
               <label>Email Address</label>

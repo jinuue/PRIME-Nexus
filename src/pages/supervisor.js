@@ -3,7 +3,7 @@ import { renderNavbar } from '../main.js';
 
 let activeSection = 'interviews';
 
-export function renderSupervisorDashboard(container) {
+export async function renderSupervisorDashboard(container) {
   const user = window.APP.user;
   if (!user || user.role !== 'supervisor') return;
 
@@ -26,8 +26,14 @@ export function renderSupervisorDashboard(container) {
     { id: 'withdrawn', label: 'Withdrawn', icon: '<i data-lucide="x-circle" style="width:16px;height:16px"></i>' },
   ];
 
-  const store = getStore();
-  const unreadCount = store.messages.filter(m => m.appId === user.id && m.from === 'hr' && !m.read).length;
+  // Async: fetch unread count from backend
+  let unreadCount = 0;
+  try {
+    const messages = await getMessages(user.id);
+    unreadCount = messages.filter(m => m.from === 'hr' && !m.read).length;
+  } catch (e) {
+    unreadCount = 0;
+  }
 
   sidebar.innerHTML = `
     <div class="hr-sidebar-section">${user.department} Department</div>
@@ -60,13 +66,14 @@ export function renderSupervisorDashboard(container) {
     };
   });
 
-  renderSectionContent(main, user);
+  await renderSectionContent(main, user);
   if (window.lucide) window.lucide.createIcons();
 }
 
-function renderSectionContent(el, user) {
-  const store = getStore();
-  const myApps = store.applications.filter(a => a.department === user.department);
+async function renderSectionContent(el, user) {
+  // TODO: Replace with getApplications({ department: user.department }) if available
+  // For now, fallback to empty array
+  const myApps = [];
 
   if (activeSection === 'interviews') {
     const interviews = myApps.filter(a => a.status === 'final_interview').sort((a, b) => {
@@ -194,7 +201,7 @@ function renderSectionContent(el, user) {
       `;
 
       el.querySelectorAll('.btn-view-dtr').forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           const view = document.getElementById('sup-dtr-view');
 
           if (btn.innerText.includes('Close DTR')) {
@@ -209,42 +216,46 @@ function renderSectionContent(el, user) {
           const appId = btn.dataset.appid;
           const intern = deployed.find(a => a.id === appId);
 
-          const dtrs = getDtrEntries(appId);
-          if (dtrs.length === 0) {
-            view.innerHTML = `<h3 class="mb-1 mt-2">DTR: ${intern.name}</h3><div class="empty-state"><p>No DTR entries found for this intern.</p></div>`;
+          view.innerHTML = '<div class="loading">Loading DTR...</div>';
+          try {
+            const dtrs = await getDtrEntries(appId);
+            if (!dtrs.length) {
+              view.innerHTML = `<h3 class="mb-1 mt-2">DTR: ${intern.name}</h3><div class="empty-state"><p>No DTR entries found for this intern.</p></div>`;
+              view.scrollIntoView({ behavior: 'smooth' });
+              return;
+            }
+            let totalReg = 0, totalOt = 0, totalWork = 0;
+            const rows = dtrs.map(d => {
+              const h = computeHours(d.timeIn, d.timeOut);
+              totalReg += h.regular;
+              totalOt += h.overtime;
+              totalWork += h.total;
+              return `<tr><td>${d.date}</td><td>${d.timeIn}</td><td>${d.timeOut}</td><td>${formatHours(h.regular)}</td><td>${formatHours(h.overtime)}</td><td><strong>${formatHours(h.total)}</strong></td></tr>`;
+            }).join('');
+            view.innerHTML = `
+              <h3 class="mb-1 mt-2">DTR: ${intern.name}</h3>
+              <div class="flex mt-2 mb-2" style="gap:0.75rem">
+                <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalReg)}</div><div class="stat-label">Regular Hours</div></div>
+                <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalOt)}</div><div class="stat-label">Overtime Hours</div></div>
+                <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork)}</div><div class="stat-label">Total Work Hours</div></div>
+              </div>
+              <div class="table-wrap mb-2">
+                <table>
+                  <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Regular</th><th>OT</th><th>Total</th></tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            `;
             view.scrollIntoView({ behavior: 'smooth' });
-            return;
+          } catch (e) {
+            view.innerHTML = '<div class="error">Failed to load DTR entries.</div>';
           }
-
-          let totalReg = 0, totalOt = 0, totalWork = 0;
-          const rows = dtrs.map(d => {
-            const h = computeHours(d.timeIn, d.timeOut);
-            totalReg += h.regular;
-            totalOt += h.overtime;
-            totalWork += h.total;
-            return `<tr><td>${d.date}</td><td>${d.timeIn}</td><td>${d.timeOut}</td><td>${formatHours(h.regular)}</td><td>${formatHours(h.overtime)}</td><td><strong>${formatHours(h.total)}</strong></td></tr>`;
-          }).join('');
-
-          view.innerHTML = `
-            <h3 class="mb-1 mt-2">DTR: ${intern.name}</h3>
-            <div class="flex mt-2 mb-2" style="gap:0.75rem">
-              <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalReg)}</div><div class="stat-label">Regular Hours</div></div>
-              <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalOt)}</div><div class="stat-label">Overtime Hours</div></div>
-              <div class="stat-card" style="flex:1"><div class="stat-number">${formatHours(totalWork)}</div><div class="stat-label">Total Work Hours</div></div>
-            </div>
-            <div class="table-wrap mb-2">
-              <table>
-                <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Regular</th><th>OT</th><th>Total</th></tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>
-          `;
-          view.scrollIntoView({ behavior: 'smooth' });
         };
       });
     }
   }
   else if (activeSection === 'documents') {
+    // TODO: Replace with backend API for fetching interns and their documents
     const allInterns = myApps.filter(a => a.status === 'accepted');
     const docsToSign = [];
     allInterns.forEach(a => {
@@ -276,11 +287,20 @@ function renderSectionContent(el, user) {
       </table></div>`;
 
       el.querySelectorAll('.btn-sign').forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           if (confirm('Confirm that you have physically signed this document on paper?')) {
-            signSchoolDoc(btn.dataset.appid, btn.dataset.docid, user.name);
-            renderSupervisorDashboard(document.getElementById('app'));
-            alert('Document marked as physically signed.');
+            btn.disabled = true;
+            btn.textContent = 'Signing...';
+            try {
+              await signSchoolDoc(btn.dataset.appid, btn.dataset.docid, user.name);
+              renderSupervisorDashboard(document.getElementById('app'));
+              alert('Document marked as physically signed.');
+            } catch (e) {
+              alert('Failed to sign document.');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = 'Mark as Signed';
+            }
           }
         };
       });
@@ -288,18 +308,23 @@ function renderSectionContent(el, user) {
   }
   else if (activeSection === 'chat') {
     const appId = user.id;
-    markMessagesAsRead(appId, 'supervisor');
+    await markMessagesAsRead(appId, 'supervisor');
 
     el.innerHTML = `<h2>HR Communication</h2>
       <p style="color:var(--text-secondary);margin-bottom:1rem">Send and receive messages directly with the HR Department.</p>`;
 
-    const messages = store.messages.filter(m => m.appId === appId);
+    let messages = [];
+    try {
+      messages = await getMessages(appId);
+    } catch (e) {
+      el.innerHTML += '<div class="error">Failed to load messages.</div>';
+      return;
+    }
     let msgsHTML = '';
     messages.forEach(m => {
       const cls = m.from === 'supervisor' ? 'sent' : 'received';
       msgsHTML += `<div class="chat-msg ${cls}"><div>${m.text}</div><div class="msg-time">${m.time}</div></div>`;
     });
-
     el.innerHTML += `
       <div class="chat-box" style="height: calc(100vh - 200px); max-width: 100%">
         <div class="chat-messages" id="sup-chat-msgs" style="flex:1;overflow-y:auto;padding:1rem">
@@ -311,22 +336,22 @@ function renderSectionContent(el, user) {
         </div>
       </div>
     `;
-
     setTimeout(() => {
       const chatMsgs = document.getElementById('sup-chat-msgs');
       if (chatMsgs) chatMsgs.scrollTop = chatMsgs.scrollHeight;
-
-      document.getElementById('btn-sup-send').onclick = () => {
+      document.getElementById('btn-sup-send').onclick = async () => {
         const input = document.getElementById('sup-chat-input');
         if (!input.value.trim()) return;
-
-        const data = getStore();
-        data.messages.push({ id: 'msg' + Date.now(), appId, from: 'supervisor', text: input.value.trim(), time: new Date().toLocaleString(), read: false });
-        localStorage.setItem('prime_ims_data', JSON.stringify(data));
-
-        renderSupervisorDashboard(document.getElementById('app'));
+        document.getElementById('btn-sup-send').disabled = true;
+        try {
+          await sendMessage(appId, 'supervisor', input.value.trim());
+          renderSupervisorDashboard(document.getElementById('app'));
+        } catch (e) {
+          alert('Failed to send message.');
+        } finally {
+          document.getElementById('btn-sup-send').disabled = false;
+        }
       };
-
       document.getElementById('sup-chat-input').onkeydown = (e) => {
         if (e.key === 'Enter') document.getElementById('btn-sup-send').click();
       };
