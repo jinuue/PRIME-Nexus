@@ -1,3 +1,11 @@
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { pool } from './db.js';
+
+const app = express();
+app.use(express.json({ limit: '2mb' }));
+
 // --- School Activities ---
 // Get all school activities for an application
 app.get('/api/school-activities/:applicationId', async (req, res) => {
