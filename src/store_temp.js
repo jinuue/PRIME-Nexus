@@ -163,63 +163,6 @@ export function getApplication(userId) {
   return data.applications.find(a => a.userId === userId);
 }
 
-export function updateAppStatus(appId, status, extra = {}) {
-  const data = getStore();
-  const app = data.applications.find(a => a.id === appId);
-  if (!app) return;
-  app.status = status;
-  Object.assign(app, extra);
-  if (status === 'accepted') {
-    const user = data.users.find(u => u.id === app.userId);
-    if (user) user.role = 'intern';
-  }
-  saveStore(data);
-  return app;
-}
-
-export function deployIntern(appId) {
-  const data = getStore();
-  const app = data.applications.find(a => a.id === appId);
-  if (app) app.isDeployed = true;
-  saveStore(data);
-  return app;
-}
-
-// DTR helpers
-export function addDtrEntry(appId, entry) {
-  const data = getStore();
-  const dtr = { id: makeId('dtr'), appId, ...entry, type: 'work' };
-  data.dtrEntries.push(dtr);
-  saveStore(data);
-  return dtr;
-}
-
-export function getDtrEntries(appId) {
-  const data = getStore();
-  return data.dtrEntries.filter(d => d.appId === appId);
-}
-
-export function addSchoolActivity(appId, entry) {
-  const data = getStore();
-  if (!data.schoolActivities) data.schoolActivities = [];
-  const sa = { id: makeId('sa'), appId, ...entry, status: 'pending', type: 'school' };
-  data.schoolActivities.push(sa);
-  saveStore(data);
-  return sa;
-}
-
-export function getSchoolActivities(appId) {
-  const data = getStore();
-  return (data.schoolActivities || []).filter(s => s.appId === appId);
-}
-
-export function approveSchoolActivity(saId, approve) {
-  const data = getStore();
-  const sa = (data.schoolActivities || []).find(s => s.id === saId);
-  if (sa) sa.status = approve ? 'approved' : 'rejected';
-  saveStore(data);
-}
-
 // Message helpers
 export function getMessages(appId) {
   const data = getStore();
