@@ -184,6 +184,17 @@ export async function registerUser({ name, email, password, phone }) {
   }
 }
 
+export function updateUser(userId, updates) {
+  const data = getStore();
+  const user = data.users.find(u => u.id === userId);
+  if (user) {
+    Object.assign(user, updates);
+    saveStore(data);
+    return user;
+  }
+  return null;
+}
+
 // Application helpers
 export function submitApplication(userId, formData) {
   const data = getStore();

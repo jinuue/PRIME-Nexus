@@ -75,12 +75,7 @@ export function renderStatus(container) {
   STATUS_STEPS.forEach(step => {
     const state = getStepState(step.key, app.status);
     let detail = '';
-    if (step.key === 'initial_interview' && app.interviewDate) {
-      detail = `<div class="step-detail">${app.interviewDate} at ${app.interviewTime || 'TBD'}</div>`;
-    }
-    if (step.key === 'final_interview' && app.finalInterviewDate) {
-      detail = `<div class="step-detail">${app.finalInterviewDate} at ${app.finalInterviewTime || 'TBD'}</div>`;
-    }
+    // Details removed from stepper as they are now in the message card below
     if (step.key === 'result') {
       if (app.status === 'accepted') detail = `<div class="step-detail" style="color:var(--success)">Accepted <i data-lucide="check-circle" style="width:12px;height:12px;vertical-align:middle"></i></div>`;
       else if (app.status === 'failed') detail = `<div class="step-detail" style="color:var(--accent-red)">Not Selected</div>`;
@@ -96,23 +91,93 @@ export function renderStatus(container) {
   });
   html += '</div>';
 
-  // Application info card
-  html += `
-    <div class="card mt-2">
-      <div class="card-header flex-between">
-        <h3>Application Details</h3>
-        <span class="badge ${getBadgeClass(app.status)}">${formatStatus(app.status)}</span>
+  // Status Messages
+  const statusMessages = {
+    submitted: {
+      title: "Application Received",
+      text: "Your application has been successfully submitted. Our HR team will review your qualifications and documents shortly. Please keep your lines open for any updates."
+    },
+    viewed: {
+      title: "Under Review",
+      text: "Our team has viewed your application and it is now under initial screening. We will contact you if your profile matches our current internship requirements."
+    },
+    initial_interview: {
+      title: "Initial Interview Scheduled",
+      text: "Great news! You have been selected for an initial interview. Please refer to the schedule in the progress tracker above for your date, time, and assigned interviewer."
+    },
+    final_interview: {
+      title: "Final Interview Stage",
+      text: "You've successfully passed the initial screening! You are now scheduled for a final interview. This is your opportunity to meet with our department supervisors."
+    },
+    final_review: {
+      title: "Final Evaluation",
+      text: "Your interviews are complete, and your application is now undergoing final evaluation by our management team. We will notify you of the final result very soon."
+    },
+    accepted: {
+      title: "Application Approved",
+      text: "Congratulations! You have been officially accepted into the PRIME Philippines Internship Program. We are excited to have you on board!"
+    },
+    failed: {
+      title: "Application Update",
+      text: "Thank you for your interest in PRIME Philippines. After careful consideration, we regret to inform you that we are not moving forward with your application at this time."
+    }
+  };
+
+  const msg = statusMessages[app.status] || { title: "Status Update", text: "Your application is currently being processed." };
+
+  const showGenericCard = !['accepted', 'failed'].includes(app.status);
+
+  if (showGenericCard) {
+    let scheduleInfo = '';
+    if (['initial_interview', 'final_interview'].includes(app.status)) {
+      const isFinal = app.status === 'final_interview';
+      const date = isFinal ? app.finalInterviewDate : app.interviewDate;
+      const time = isFinal ? app.finalInterviewTime : app.interviewTime;
+      const interviewer = isFinal ? app.finalInterviewedBy : app.interviewedBy;
+      
+      if (date) {
+        const formatT = (t) => {
+          if (!t) return 'TBD';
+          const [h, m] = t.split(':');
+          const hh = parseInt(h);
+          const ampm = hh >= 12 ? 'PM' : 'AM';
+          const h12 = hh % 12 || 12;
+          return `${h12}:${m} ${ampm}`;
+        };
+
+        scheduleInfo = `
+          <div style="margin: 1.5rem 0; padding: 1.25rem; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); border-left: 4px solid var(--accent-yellow);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Interview Schedule</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text);">${date} at ${formatT(time)}</div>
+            ${interviewer ? `<div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.25rem;">Interviewer: <strong style="color:var(--text)">${interviewer}</strong></div>` : ''}
+            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="clock" style="width:14px;height:14px;color:var(--accent-yellow)"></i>
+              <span>Reminder: Please arrive at the office 15 minutes before your scheduled time.</span>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    html += `
+      <div class="card mt-2">
+        <div class="card-header flex-between">
+          <h3>${msg.title}</h3>
+          <span class="badge ${getBadgeClass(app.status)}">${formatStatus(app.status)}</span>
+        </div>
+        <div style="padding: 1rem 0;">
+          <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text);">${msg.text}</p>
+          
+          ${scheduleInfo}
+
+          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div><span class="tag">Applied On</span><p style="font-weight:600;margin-top:0.25rem">${app.appliedDate}</p></div>
+            <div><span class="tag">OJT Type</span><p style="font-weight:600;margin-top:0.25rem">${app.ojtType === 'required' ? 'Required' : 'Voluntary'}</p></div>
+          </div>
+        </div>
       </div>
-      <div class="grid-2">
-        <div><span class="tag">Name</span><p style="font-weight:600;margin-top:0.25rem">${app.name}</p></div>
-        <div><span class="tag">School</span><p style="font-weight:600;margin-top:0.25rem">${app.school || 'N/A'}</p></div>
-        <div><span class="tag">Course</span><p style="font-weight:600;margin-top:0.25rem">${app.course || 'N/A'}</p></div>
-        <div><span class="tag">OJT Type</span><p style="font-weight:600;margin-top:0.25rem">${app.ojtType === 'required' ? 'Required by School' : 'Voluntary'}</p></div>
-        <div><span class="tag">Hours Required</span><p style="font-weight:600;margin-top:0.25rem">${app.hoursRequired || 'N/A'}</p></div>
-        <div><span class="tag">Applied On</span><p style="font-weight:600;margin-top:0.25rem">${app.appliedDate}</p></div>
-      </div>
-    </div>
-  `;
+    `;
+  }
 
   // Final States
   if (app.status === 'accepted') {
