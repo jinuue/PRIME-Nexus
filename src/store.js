@@ -256,19 +256,6 @@ export function getApplication(userId) {
   return data.applications.find(a => a.userId === userId);
 }
 
-export function updateAppStatus(appId, status, extra = {}) {
-  const data = getStore();
-  const app = data.applications.find(a => a.id === appId);
-  if (!app) return;
-  app.status = status;
-  Object.assign(app, extra);
-  if (status === 'accepted') {
-    const user = data.users.find(u => u.id === app.userId);
-    if (user) user.role = 'intern';
-  }
-  saveStore(data);
-  return app;
-}
 
 export function deployIntern(appId) {
   const data = getStore();
@@ -279,18 +266,7 @@ export function deployIntern(appId) {
 }
 
 // DTR helpers
-export function addDtrEntry(appId, entry) {
-  const data = getStore();
-  const dtr = { id: makeId('dtr'), appId, ...entry, type: 'work' };
-  data.dtrEntries.push(dtr);
-  saveStore(data);
-  return dtr;
-}
 
-export function getDtrEntries(appId) {
-  const data = getStore();
-  return data.dtrEntries.filter(d => d.appId === appId);
-}
 
 export function addSchoolActivity(appId, entry) {
   const data = getStore();
@@ -314,18 +290,7 @@ export function approveSchoolActivity(saId, approve) {
 }
 
 // Message helpers
-export function getMessages(appId) {
-  const data = getStore();
-  return data.messages.filter(m => m.appId === appId);
-}
 
-export function sendMessage(appId, from, text) {
-  const data = getStore();
-  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString() };
-  data.messages.push(msg);
-  saveStore(data);
-  return msg;
-}
 
 export function markMessagesAsRead(appId, readByRole) {
   const data = getStore();
