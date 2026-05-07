@@ -1,3 +1,26 @@
+// Get user by ID
+app.get('/api/user/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT id, email, name, phone, role FROM users WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    const user = result.rows[0];
+    // Defensive: ensure all fields are present
+    res.json({ user: {
+      id: user.id,
+      email: user.email || '',
+      name: user.name || '',
+      phone: user.phone || '',
+      role: user.role || 'applicant',
+    }});
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  } finally {
+    client.release();
+  }
+});
 
 import express from 'express';
 import path from 'path';
