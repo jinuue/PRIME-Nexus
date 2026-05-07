@@ -1,9 +1,12 @@
-import { submitApplication, getApplication, DEPARTMENTS } from '../store.js';
+import { submitApplication, getApplication } from '../store.js';
 import { renderNavbar, setupPhoneMask } from '../main.js';
 
 export function renderApply(container) {
   const user = window.APP.user;
-  if (!user) { location.hash = '#login'; return; }
+  if (!user || !user.id || !user.name) {
+    location.hash = '#login';
+    return;
+  }
 
   // Check if already applied
   const existing = getApplication(user.id);
@@ -16,7 +19,7 @@ export function renderApply(container) {
   page.innerHTML = `
     <div class="container" style="max-width:720px">
       <div class="page-header text-center">
-        <h1>📋 Internship Application</h1>
+        <h1><i data-lucide="clipboard-signature"></i> Internship Application</h1>
         <p>Fill out the form below to apply for the PRIME Philippines Internship Program</p>
       </div>
       <div class="card">
@@ -24,7 +27,7 @@ export function renderApply(container) {
           <div class="form-row">
             <div class="form-group">
               <label>Full Name</label>
-              <input type="text" name="name" class="form-control" value="${user.name}" required id="input-fullname" />
+              <input type="text" name="name" class="form-control" value="${user.name || ''}" required id="input-fullname" />
             </div>
             <div class="form-group">
               <label>Email Address</label>
@@ -39,7 +42,7 @@ export function renderApply(container) {
             <div class="form-group">
               <label>Course / Program</label>
               <select name="course_select" class="form-control" required id="select-course">
-                <option value="">-- Select --</option>
+                <option value="" disabled selected hidden>-- Select --</option>
                 <option value="BS Information Technology">BS Information Technology</option>
                 <option value="BS Computer Science">BS Computer Science</option>
                 <option value="BS Business Administration">BS Business Administration</option>
@@ -63,7 +66,7 @@ export function renderApply(container) {
           <div class="form-group">
             <label>School / University</label>
             <select name="school_select" class="form-control" required id="select-school">
-              <option value="">-- Select --</option>
+              <option value="" disabled selected hidden>-- Select --</option>
               <optgroup label="Top Universities">
                 <option value="University of the Philippines">University of the Philippines (UP)</option>
                 <option value="Ateneo de Manila University">Ateneo de Manila University (ADMU)</option>
@@ -103,7 +106,7 @@ export function renderApply(container) {
           <div class="form-group">
             <label>CV / Resume</label>
             <div class="file-upload" onclick="document.getElementById('file-cv').click()">
-              <div class="icon">📄</div>
+              <div class="icon"><i data-lucide="file-text"></i></div>
               <p>Click to upload your CV/Resume</p>
               <div id="cv-filename" class="file-name"></div>
             </div>
@@ -112,7 +115,7 @@ export function renderApply(container) {
           <div class="form-group">
             <label>Cover Letter / Portfolio <span class="optional">(Optional)</span></label>
             <div class="file-upload" onclick="document.getElementById('file-cover').click()">
-              <div class="icon">📎</div>
+              <div class="icon"><i data-lucide="paperclip"></i></div>
               <p>Click to upload cover letter or portfolio</p>
               <div id="cover-filename" class="file-name"></div>
             </div>
@@ -134,7 +137,7 @@ export function renderApply(container) {
             <div class="form-group">
               <label>Where did you find us?</label>
               <select name="source" class="form-control" required id="select-source">
-                <option value="">-- Select --</option>
+                <option value="" disabled selected hidden>-- Select --</option>
                 <option value="Facebook">Facebook</option>
                 <option value="Referral">Referral</option>
                 <option value="School/University Partner">School/University Partner</option>
@@ -158,11 +161,13 @@ export function renderApply(container) {
   // File upload display
   document.getElementById('file-cv').onchange = (e) => {
     const name = e.target.files[0]?.name;
-    document.getElementById('cv-filename').textContent = name ? '✅ ' + name : '';
+    document.getElementById('cv-filename').innerHTML = name ? '<i data-lucide="check" style="width:14px;height:14px;color:var(--success);vertical-align:middle"></i> ' + name : '';
+    if (window.lucide) window.lucide.createIcons();
   };
   document.getElementById('file-cover').onchange = (e) => {
     const name = e.target.files[0]?.name;
-    document.getElementById('cover-filename').textContent = name ? '✅ ' + name : '';
+    document.getElementById('cover-filename').innerHTML = name ? '<i data-lucide="check" style="width:14px;height:14px;color:var(--success);vertical-align:middle"></i> ' + name : '';
+    if (window.lucide) window.lucide.createIcons();
   };
 
   setupPhoneMask(document.getElementById('input-phone'));
@@ -219,4 +224,6 @@ export function renderApply(container) {
 
     location.hash = '#status';
   };
+
+  if (window.lucide) window.lucide.createIcons();
 }

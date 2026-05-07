@@ -1,8 +1,344 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool } from './db.js';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// --- School Activities ---
+// Get all school activities for an application
+app.get('/api/school-activities/:applicationId', async (req, res) => {
+  const { applicationId } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM school_activities WHERE app_id = $1 ORDER BY created_at', [applicationId]);
+    res.json({ schoolActivities: result.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch school activities' });
+  } finally {
+    client.release();
+  }
+});
+
+// Add a new school activity
+app.post('/api/school-activities', async (req, res) => {
+  const { appId, title, description, status, type } = req.body || {};
+  if (!appId || !title) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `INSERT INTO school_activities (id, app_id, title, description, status, type, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, now()) RETURNING *`,
+      [appId, title, description || '', status || 'pending', type || 'school']
+    );
+    res.json({ schoolActivity: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to add school activity' });
+  } finally {
+    client.release();
+  }
+});
+
+// Update a school activity (approve/reject)
+app.patch('/api/school-activities/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body || {};
+  if (!status) return res.status(400).json({ error: 'Missing status' });
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `UPDATE school_activities SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'School activity not found' });
+    res.json({ schoolActivity: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to update school activity' });
+  } finally {
+    client.release();
+  }
+});
+
+// --- Messages (Chat) ---
+// Get all messages for an application
+app.get('/api/messages/:applicationId', async (req, res) => {
+  const { applicationId } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM messages WHERE app_id = $1 ORDER BY time', [applicationId]);
+    res.json({ messages: result.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  } finally {
+    client.release();
+  }
+});
+
+// Send a new message
+app.post('/api/messages', async (req, res) => {
+  const { appId, from, text } = req.body || {};
+  if (!appId || !from || !text) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `INSERT INTO messages (id, app_id, "from", text, time, read) VALUES (gen_random_uuid(), $1, $2, $3, now(), false) RETURNING *`,
+      [appId, from, text]
+    );
+    res.json({ message: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to send message' });
+  } finally {
+    client.release();
+  }
+});
+
+// Mark a message as read
+app.patch('/api/messages/:id/read', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `UPDATE messages SET read = true WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Message not found' });
+    res.json({ message: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to mark message as read' });
+  } finally {
+    client.release();
+  }
+});
+
+// --- Documents ---
+// Get all company documents (static list)
+app.get('/api/documents/company', async (req, res) => {
+  // For now, return a static list; in production, fetch from DB if needed
+  res.json({ documents: [
+    { id: 'doc1', name: 'Non-Disclosure Agreement (NDA)', desc: 'Must be signed before deployment', type: 'sign' },
+    { id: 'doc2', name: 'Internship Agreement', desc: 'Terms and conditions of the internship', type: 'sign' },
+    { id: 'doc3', name: 'Company Rules & Regulations', desc: 'Acknowledgment of company policies', type: 'sign' },
+    { id: 'doc4', name: 'Emergency Contact Form', desc: 'For emergency purposes', type: 'submit' },
+    { id: 'doc5', name: 'Medical Certificate', desc: 'Fit to work certification', type: 'submit' },
+  ] });
+});
+
+// Get all school documents for an application (stub)
+app.get('/api/documents/school/:applicationId', async (req, res) => {
+  // For now, return an empty list; in production, fetch from DB if needed
+  res.json({ documents: [] });
+});
+// --- INTERN MODULE API ENDPOINTS ---
+
+// Get application by user ID
+app.get('/api/application/user/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM applications WHERE user_id = $1', [userId]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Application not found' });
+    res.json({ application: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch application' });
+  } finally {
+    client.release();
+  }
+});
+
+// Update application status (withdraw, deploy, etc.)
+app.patch('/api/application/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status, withdrawReason, isDeployed } = req.body || {};
+  const client = await pool.connect();
+  try {
+    let updates = [];
+    let values = [];
+    let idx = 1;
+    if (status) { updates.push(`status = $${idx++}`); values.push(status); }
+    if (typeof isDeployed === 'boolean') { updates.push(`is_deployed = $${idx++}`); values.push(isDeployed); }
+    if (withdrawReason) { updates.push(`withdraw_reason = $${idx++}`); values.push(withdrawReason); }
+    if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
+    values.push(id);
+    const result = await client.query(
+      `UPDATE applications SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Application not found' });
+    res.json({ application: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to update application' });
+  } finally {
+    client.release();
+  }
+});
+
+// Get all DTR entries for an application
+app.get('/api/dtr/:applicationId', async (req, res) => {
+  const { applicationId } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM dtr_entries WHERE app_id = $1 ORDER BY date, timeIn', [applicationId]);
+    res.json({ dtrEntries: result.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch DTR entries' });
+  } finally {
+    client.release();
+  }
+});
+
+// Add a new DTR entry
+app.post('/api/dtr', async (req, res) => {
+  const { appId, date, timeIn, timeOut, type } = req.body || {};
+  if (!appId || !date || !timeIn || !timeOut) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `INSERT INTO dtr_entries (id, app_id, date, timeIn, timeOut, type) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *`,
+      [appId, date, timeIn, timeOut, type || 'work']
+    );
+    res.json({ dtrEntry: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to add DTR entry' });
+  } finally {
+    client.release();
+  }
+});
+// Get user by ID
+app.get('/api/user/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT id, email, name, phone, role FROM users WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    const user = result.rows[0];
+    // Defensive: ensure all fields are present
+    res.json({ user: {
+      id: user.id,
+      email: user.email || '',
+      name: user.name || '',
+      phone: user.phone || '',
+      role: user.role || 'applicant',
+    }});
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  } finally {
+    client.release();
+  }
+});
+
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { pool } from './db.js';
+
+
+const app = express();
+app.use(express.json({ limit: '2mb' }));
+
+// Serve static files from the frontend build (dist)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+// ...existing code...
+
+
+// --- AUTH & USER ENDPOINTS ---
+let bcrypt;
+try { bcrypt = require('bcryptjs'); } catch { bcrypt = null; }
+
+// Register user
+app.post('/api/register', async (req, res) => {
+  const { name, email, password, phone } = req.body || {};
+  if (!name || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    // Check if user exists
+    const exists = await client.query('SELECT 1 FROM users WHERE email = $1', [email]);
+    if (exists.rowCount > 0) return res.status(409).json({ error: 'Email already registered' });
+    // Hash password (optional: use bcrypt if available)
+    let hashed = password;
+    if (bcrypt) hashed = await bcrypt.hash(password, 10);
+    // Insert user
+    const result = await client.query(
+      'INSERT INTO users (id, email, password, name, phone, role) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING id, email, name, phone, role',
+      [email, hashed, name, phone, 'applicant']
+    );
+    res.json({ user: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Registration failed' });
+  } finally {
+    client.release();
+  }
+});
+
+// Login user
+app.post('/api/login', async (req, res) => {
+  const { email, password, role } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT id, email, password, name, phone, role FROM users WHERE email = $1', [email]);
+    if (result.rowCount === 0) return res.status(401).json({ error: 'Invalid email or password' });
+    const user = result.rows[0];
+    let valid = false;
+    if (bcrypt) valid = await bcrypt.compare(password, user.password);
+    else valid = user.password === password;
+    if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+    if (role && user.role !== role && !(role === 'intern' && user.role === 'applicant')) return res.status(403).json({ error: 'Access denied for this role' });
+    delete user.password;
+    res.json({ user });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Login failed' });
+  } finally {
+    client.release();
+  }
+});
+
+// Submit application
+app.post('/api/applications', async (req, res) => {
+  const { userId, name, email, phone, course, school, ojtType, hoursRequired, source, schedule, department } = req.body || {};
+  if (!userId || !name || !email) return res.status(400).json({ error: 'Missing required fields' });
+  const client = await pool.connect();
+  try {
+    // Check if already applied
+    const exists = await client.query('SELECT 1 FROM applications WHERE user_id = $1', [userId]);
+    if (exists.rowCount > 0) return res.status(409).json({ error: 'Already applied' });
+    const now = new Date();
+    const appliedDate = now.toISOString().split('T')[0];
+    const result = await client.query(
+      `INSERT INTO applications (id, user_id, name, email, phone, course, school, ojt_type, hours_required, source, status, applied_date, quarter, department, schedule, is_deployed, company_docs, school_docs)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, 'submitted', $10, $11, $12, $13, false, '{}'::jsonb, '[]'::jsonb)
+       RETURNING id, user_id, name, email, phone, course, school, ojt_type, hours_required, source, status, applied_date, quarter, department, schedule, is_deployed`,
+      [userId, name, email, phone, course, school, ojtType, hoursRequired, source, appliedDate, req.body.quarter || '', department, schedule]
+    );
+    res.json({ application: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Application failed' });
+  } finally {
+    client.release();
+  }
+});
+
+// Catch-all: serve index.html for any non-API route (SPA support)
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) return res.status(404).json({ error: 'API route not found' });
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 const EXPECTED_TABLES = [
   'hr_users',
@@ -458,6 +794,8 @@ app.put('/api/store', async (req, res) => {
   } finally {
     client.release();
   }
+
+
 });
 
 export default app;

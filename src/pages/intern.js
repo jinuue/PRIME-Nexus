@@ -1,4 +1,4 @@
-import { getApplication, getDtrEntries, addDtrEntry, getSchoolActivities, addSchoolActivity, getMessages, sendMessage, computeHours, formatHours, COMPANY_DOCUMENTS, updateDocStatus, addSchoolDoc, getStore, updateAppStatus, markMessagesAsRead } from '../store.js';
+import { getApplication, getDtrEntries, addDtrEntry, getSchoolActivities, addSchoolActivity, getMessages, sendMessage, computeHours, formatHours, getCompanyDocuments, updateDocStatus, addSchoolDoc, getStore, updateAppStatus, markMessagesAsRead } from '../store.js';
 import { renderNavbar } from '../main.js';
 
 let activeTab = 'deployment';
@@ -32,19 +32,19 @@ export function renderInternDashboard(container) {
 
   const unreadCount = getMessages(app.id).filter(m => m.from === 'hr' && !m.read).length;
   const chatLabel = unreadCount > 0 
-    ? `💬 HR Comm <span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:4px">${unreadCount}</span>` 
-    : '💬 HR Comm';
+    ? `<i data-lucide="message-square" style="width:14px;height:14px;margin-right:4px"></i> HR Communications <span style="background:var(--accent-red);color:white;border-radius:50%;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:4px">${unreadCount}</span>` 
+    : '<i data-lucide="message-square" style="width:14px;height:14px;margin-right:4px"></i> HR Communications';
 
   // Tabs
   let tabs = [
-    { key: 'deployment', label: '📍 Deployment' },
-    { key: 'documents', label: '📄 Documents' },
+    { key: 'deployment', label: '<i data-lucide="map-pin" style="width:14px;height:14px;margin-right:4px"></i> Deployment' },
+    { key: 'documents', label: '<i data-lucide="file-text" style="width:14px;height:14px;margin-right:4px"></i> Documents' },
     { key: 'chat', label: chatLabel },
   ];
   
   if (app.isDeployed) {
-    tabs.push({ key: 'dtr', label: '⏱️ DTR' });
-    tabs.push({ key: 'hours', label: '📊 Hours' });
+    tabs.push({ key: 'dtr', label: '<i data-lucide="clock" style="width:14px;height:14px;margin-right:4px"></i> DTR' });
+    tabs.push({ key: 'hours', label: '<i data-lucide="bar-chart-2" style="width:14px;height:14px;margin-right:4px"></i> Hours' });
   }
 
   let tabsHTML = '<div class="tabs">';
@@ -64,6 +64,8 @@ export function renderInternDashboard(container) {
       renderInternDashboard(document.getElementById('app'));
     };
   });
+
+  if (window.lucide) window.lucide.createIcons();
 
   const content = document.getElementById('tab-content');
   switch (activeTab) {
@@ -91,7 +93,7 @@ function renderDeployment(el, app) {
     ${!app.isDeployed ? `
       <div class="card mt-2" style="border-left: 4px solid var(--accent-yellow)">
         <div style="display:flex;gap:1rem;align-items:center">
-          <div style="font-size:2rem">⏳</div>
+          <div style="font-size:2rem;color:var(--warning)"><i data-lucide="clock" style="width:40px;height:40px"></i></div>
           <div>
             <h3 style="color:var(--primary)">Deployment Pending</h3>
             <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.25rem">Your internship has been accepted, but you are not yet officially deployed to the office. Please coordinate with HR and ensure all your documents are submitted.</p>
@@ -101,7 +103,7 @@ function renderDeployment(el, app) {
     ` : `
       <div class="card mt-2" style="border-left: 4px solid var(--success)">
         <div style="display:flex;gap:1rem;align-items:center">
-          <div style="font-size:2rem">🚀</div>
+          <div style="font-size:2rem;color:var(--success)"><i data-lucide="rocket" style="width:40px;height:40px"></i></div>
           <div>
             <h3 style="color:var(--success)">Officially Deployed</h3>
             <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.25rem">You are now officially rendering hours in the office. You can now use the DTR and Hours tracking features.</p>
@@ -128,7 +130,7 @@ function renderDeployment(el, app) {
           <div class="form-group mt-1 text-left">
             <label>Reason for Withdrawal</label>
             <select id="withdraw-reason" class="form-control">
-              <option value="">-- Select Reason --</option>
+              <option value="" disabled selected hidden>-- Select Reason --</option>
               <option value="Accepted another offer">Accepted another offer</option>
               <option value="Schedule conflict">Schedule conflict</option>
               <option value="Personal reasons">Personal reasons</option>
@@ -169,10 +171,11 @@ function renderDeployment(el, app) {
       };
     };
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderDocuments(el, app) {
-  const docs = COMPANY_DOCUMENTS;
+  const docs = getCompanyDocuments();
   const companyDocs = app.companyDocs || {};
   const schoolDocs = app.schoolDocs || [];
   const messages = getMessages(app.id);
@@ -195,19 +198,68 @@ function renderDocuments(el, app) {
     docs.forEach(doc => {
       const status = companyDocs[doc.id] || 'pending';
       const badgeClass = status === 'signed' ? 'badge-green' : status === 'submitted' ? 'badge-blue' : 'badge-gray';
-      const badgeText = status === 'signed' ? '✅ Signed' : status === 'submitted' ? '📤 Submitted' : '⏳ Pending';
+      const badgeText = status === 'signed' ? '<i data-lucide="check-circle" style="width:12px;height:12px"></i> Signed' : status === 'submitted' ? '<i data-lucide="upload" style="width:12px;height:12px"></i> Submitted' : '<i data-lucide="clock" style="width:12px;height:12px"></i> Pending';
+      
+      let actionBtn = '';
+      if (status === 'pending') {
+        if (doc.type === 'sign') {
+          actionBtn = `<button class="btn btn-primary btn-sm btn-sign-company" data-docid="${doc.id}" style="font-size:0.7rem">Sign Document</button>`;
+        } else {
+          actionBtn = `
+            <div class="flex" style="gap:0.5rem">
+              <input type="file" id="file-${doc.id}" style="display:none" onchange="window.handleCompanyUpload('${doc.id}')" />
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('file-${doc.id}').click()" style="font-size:0.7rem">Upload File</button>
+            </div>
+          `;
+        }
+      }
+
       html += `
         <div class="doc-item">
-          <div>
-            <div class="doc-name">${doc.name}</div>
-            <div class="doc-desc">${doc.desc}</div>
+          <div style="flex:1">
+            <div class="doc-name">
+              ${doc.name}
+              ${doc.templateName ? `<span style="font-weight:400;font-size:0.7rem;color:var(--accent-blue);margin-left:8px;cursor:pointer" onclick="alert('Downloading: ${doc.templateName}')"><i data-lucide="download" style="width:12px;height:12px"></i> Template</span>` : ''}
+            </div>
+            <div class="doc-desc">${doc.desc || ''}</div>
+            <div class="mt-1"><span class="badge ${badgeClass}">${badgeText}</span></div>
           </div>
-          <span class="badge ${badgeClass}">${badgeText}</span>
+          <div class="doc-action">${actionBtn}</div>
         </div>
       `;
     });
     html += '</div>';
     docContent.innerHTML = html;
+
+    docContent.querySelectorAll('.btn-sign-company').forEach(btn => {
+      btn.onclick = () => {
+        const docId = btn.dataset.docid;
+        if (confirm('Do you acknowledge and sign this document?')) {
+          const store = getStore();
+          const currentApp = store.applications.find(a => a.id === app.id);
+          if (currentApp) {
+            if (!currentApp.companyDocs) currentApp.companyDocs = {};
+            currentApp.companyDocs[docId] = 'signed';
+            saveStore(store);
+            renderInternDashboard(document.getElementById('app'));
+          }
+        }
+      };
+    });
+
+    window.handleCompanyUpload = (docId) => {
+      const file = document.getElementById(`file-${docId}`).files[0];
+      if (file) {
+        const store = getStore();
+        const currentApp = store.applications.find(a => a.id === app.id);
+        if (currentApp) {
+          if (!currentApp.companyDocs) currentApp.companyDocs = {};
+          currentApp.companyDocs[docId] = 'submitted';
+          saveStore(store);
+          renderInternDashboard(document.getElementById('app'));
+        }
+      }
+    };
   }
 
   function renderSchoolDocs() {
@@ -232,7 +284,7 @@ function renderDocuments(el, app) {
       html += '<div class="doc-list">';
       schoolDocs.forEach(doc => {
         const badgeClass = doc.status === 'signed' ? 'badge-green' : doc.status === 'submitted' ? 'badge-blue' : 'badge-gray';
-        const badgeText = doc.status === 'signed' ? `✅ Signed by ${doc.signedBy}` : '📤 Submitted — Awaiting Signature';
+        const badgeText = doc.status === 'signed' ? `<i data-lucide="check-circle" style="width:12px;height:12px"></i> Signed by ${doc.signedBy}` : '<i data-lucide="upload" style="width:12px;height:12px"></i> Submitted — Awaiting Signature';
         html += `
           <div class="doc-item">
             <div>
@@ -245,7 +297,7 @@ function renderDocuments(el, app) {
       });
       html += '</div>';
     } else {
-      html += '<div class="empty-state"><div class="icon">📁</div><p>No school documents uploaded yet</p></div>';
+      html += '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary);opacity:0.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><p style="font-weight:500">No school documents uploaded yet</p></div>';
     }
     docContent.innerHTML = html;
 
@@ -263,6 +315,7 @@ function renderDocuments(el, app) {
 
   document.getElementById('sub-company').onclick = () => { el.dataset.subTab = 'company'; renderDocuments(el, app); };
   document.getElementById('sub-school').onclick = () => { el.dataset.subTab = 'school'; renderDocuments(el, app); };
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderChatTab(el, app) {
@@ -284,7 +337,7 @@ function renderChatTab(el, app) {
       </div>
     `;
   });
-  if (!messages.length) msgsHTML = '<div class="empty-state" style="padding:2rem"><p>No messages yet. Start a conversation with HR.</p></div>';
+  if (!messages.length) msgsHTML = '<div class="empty-state" style="padding:3rem"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary);opacity:0.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><p style="font-weight:500">No messages yet. Start a conversation with HR.</p></div>';
 
   el.innerHTML = `
     <div class="card">
@@ -311,6 +364,7 @@ function renderChatTab(el, app) {
   document.getElementById('chat-msg-input').onkeydown = (e) => {
     if (e.key === 'Enter') document.getElementById('btn-send-msg').click();
   };
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderDTR(el, app) {
@@ -400,7 +454,7 @@ function renderDTR(el, app) {
             </tbody>
           </table>
         </div>
-      ` : '<div class="empty-state"><p>No DTR entries yet</p></div>'}
+      ` : '<div class="empty-state" style="padding:3rem"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary);opacity:0.6"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><p style="font-weight:500">No DTR entries yet</p></div>'}
     </div>
 
     <div class="card">
@@ -431,13 +485,13 @@ function renderDTR(el, app) {
             <tbody>
               ${schoolActivities.map(s => {
                 const bc = s.status === 'approved' ? 'badge-green' : s.status === 'rejected' ? 'badge-red' : 'badge-yellow';
-                const bt = s.status === 'approved' ? '✅ Approved' : s.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
-                return `<tr><td>${s.date}</td><td>${s.activity}</td><td>8</td><td>${s.proofName || '📎 Uploaded'}</td><td><span class="badge ${bc}">${bt}</span></td></tr>`;
+                const bt = s.status === 'approved' ? '<i data-lucide="check-circle" style="width:12px;height:12px"></i> Approved' : s.status === 'rejected' ? '<i data-lucide="x-circle" style="width:12px;height:12px"></i> Rejected' : '<i data-lucide="clock" style="width:12px;height:12px"></i> Pending';
+                return `<tr><td>${s.date}</td><td>${s.activity}</td><td>8</td><td>${s.proofName || '<i data-lucide="paperclip" style="width:12px;height:12px"></i> Uploaded'}</td><td><span class="badge ${bc}">${bt}</span></td></tr>`;
               }).join('')}
             </tbody>
           </table>
         </div>
-      ` : '<div class="empty-state"><p>No school activities logged</p></div>'}
+      ` : '<div class="empty-state" style="padding:3rem"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-1" style="color:var(--text-secondary);opacity:0.6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><p style="font-weight:500">No school activities logged</p></div>'}
     </div>
   `;
 
@@ -469,6 +523,7 @@ function renderDTR(el, app) {
       renderInternDashboard(document.getElementById('app'));
     };
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderHoursTab(el, app) {
@@ -522,4 +577,5 @@ function renderHoursTab(el, app) {
       </div>
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }

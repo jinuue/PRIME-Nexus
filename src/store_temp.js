@@ -1,9 +1,8 @@
-// Legacy/local helpers still needed for UI state
-export { getStore } from './store_temp.js';
-import { apiLogin, apiRegister } from './api.js';
-// Local API driven store
+﻿// Local API driven store
 
-
+let storeCache = null;
+let initPromise = null;
+let persistChain = Promise.resolve();
 
 function makeId(prefix) {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -23,14 +22,6 @@ export const DEPARTMENTS = [
   'Admin Support',
 ];
 
-const STORE_KEY = 'prime_nexus_store_v1';
-
-const EMAIL_TEMPLATES = [
-  { id: 'tmpl1', name: 'Application Received', subject: 'Application Received - PRIME Philippines', body: 'Dear {name},\n\nWe have received your application for the internship program. We will review it and get back to you soon.' },
-  { id: 'tmpl2', name: 'Interview Invitation', subject: 'Interview Invitation - PRIME Philippines', body: 'Dear {name},\n\nWe would like to invite you for an initial interview on {date} at {time}.' },
-  { id: 'tmpl3', name: 'Acceptance Letter', subject: 'Internship Acceptance - PRIME Philippines', body: 'Congratulations {name}!\n\nYou have been accepted into the PRIME Philippines Internship Program.' }
-];
-
 const COMPANY_DOCUMENTS = [
   { id: 'doc1', name: 'Non-Disclosure Agreement (NDA)', desc: 'Must be signed before deployment', type: 'sign' },
   { id: 'doc2', name: 'Internship Agreement', desc: 'Terms and conditions of the internship', type: 'sign' },
@@ -42,14 +33,6 @@ const COMPANY_DOCUMENTS = [
 const SEED_DATA = {
   users: [
     { id: 'hr1', email: 'hr@primeph.com', password: 'admin123', name: 'Maria Santos', role: 'hr' },
-    { id: 'sup_it', email: 'sup.it@primeph.com', password: 'sup123', name: 'Jonel Belandres', role: 'supervisor', department: 'IT / Development' },
-    { id: 'sup_mktg', email: 'sup.mktg@primeph.com', password: 'sup123', name: 'Franje Nuñez', role: 'supervisor', department: 'Marketing' },
-    { id: 'sup_hr', email: 'sup.hr@primeph.com', password: 'sup123', name: 'Triscia Mae Ganzon', role: 'supervisor', department: 'Human Resources' },
-    { id: 'sup_fin', email: 'sup.fin@primeph.com', password: 'sup123', name: 'Maria Clara', role: 'supervisor', department: 'Finance' },
-    { id: 'sup_ops', email: 'sup.ops@primeph.com', password: 'sup123', name: 'Juan Santos', role: 'supervisor', department: 'Operations' },
-    { id: 'sup_leg', email: 'sup.leg@primeph.com', password: 'sup123', name: 'Atty. Jose Rizal', role: 'supervisor', department: 'Legal' },
-    { id: 'sup_cre', email: 'sup.cre@primeph.com', password: 'sup123', name: 'Antonio Luna', role: 'supervisor', department: 'Creative / Design' },
-    { id: 'sup_adm', email: 'sup.adm@primeph.com', password: 'sup123', name: 'Emilio Aguinaldo', role: 'supervisor', department: 'Admin Support' },
   ],
   applications: [],
   dtrEntries: [],
@@ -57,7 +40,6 @@ const SEED_DATA = {
   messages: [],
   quarterSettings: { current: 'Q2-2026' },
   emailTemplates: [...EMAIL_TEMPLATES],
-  companyDocuments: [...COMPANY_DOCUMENTS],
   deptSlots: {
     'Marketing': 5,
     'IT / Development': 3,
@@ -75,7 +57,7 @@ function generateSeedApplicants() {
   const now = new Date();
   const apps = [
     {
-      id: 'app1', userId: 'u1', name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Jonel Belandres', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
+      id: 'app1', userId: 'u1', name: 'Juan Dela Cruz', email: 'juan@email.com', password: 'pass123', phone: '09171234567', course: 'BS Information Technology', school: 'University of the Philippines', ojtType: 'required', hoursRequired: 480, source: 'School/University Partner', status: 'accepted', appliedDate: '2026-03-15', quarter: 'Q1-2026', department: 'IT / Development', supervisor: 'Engr. Carlos Reyes', schedule: 'Mon-Fri, 8:00 AM - 5:00 PM', startDate: '2026-04-01',
       companyDocs: { doc1: 'signed', doc2: 'signed', doc3: 'submitted', doc4: 'pending', doc5: 'pending' },
       schoolDocs: [{ id: 'sd1', name: 'Endorsement Letter', status: 'submitted', signedBy: null }],
     },
@@ -104,132 +86,55 @@ function generateSeedApplicants() {
   return { users, applications: apps, dtrEntries, messages };
 }
 
-
-// --- HR BACKEND INTEGRATION ---
-import {
-  apiGetApplications,
-  apiUpdateApplicationStatus,
-  apiGetUsers,
-  apiGetDtrEntries,
-  apiAddDtrEntry,
-  apiGetCompanyDocuments,
-  apiAddCompanyDocument,
-  apiUpdateDocStatus,
-  apiSignSchoolDoc,
-  apiGetMessages,
-  apiSendMessage,
-  apiGetEmailTemplates,
-  apiSaveEmailTemplate,
-  apiDeleteEmailTemplate,
-  apiGetAnalytics,
-  apiGetHistoricalRecords
-} from './api.js';
-
-// Remove getStore/saveStore for HR data. All data must come from backend APIs.
-
-// Applications
-export async function getApplications(params = {}) {
-  return await apiGetApplications(params);
+export function getStore() {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (raw) {
+    const data = JSON.parse(raw);
+    // Migration: ensure emailTemplates and deptSlots exist in old storage
+    if (!data.emailTemplates) data.emailTemplates = [...EMAIL_TEMPLATES];
+    if (!data.deptSlots) data.deptSlots = { ...SEED_DATA.deptSlots };
+    return data;
+  }
+  const seed = generateSeedApplicants();
+  const data = {
+    ...SEED_DATA,
+    users: [...SEED_DATA.users, ...seed.users],
+    applications: seed.applications,
+    dtrEntries: seed.dtrEntries,
+    schoolActivities: [],
+    messages: seed.messages,
+  };
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  return data;
 }
-export async function updateAppStatus(appId, status, extra = {}) {
-  return await apiUpdateApplicationStatus(appId, status, extra);
-}
-
-// Users
-export async function getUsers(params = {}) {
-  return await apiGetUsers(params);
-}
-
-// DTR
-export async function getDtrEntries(appId) {
-  return await apiGetDtrEntries(appId);
-}
-export async function addDtrEntry(appId, entry) {
-  return await apiAddDtrEntry(appId, entry);
-}
-
-// Documents
-export async function getCompanyDocuments() {
-  return await apiGetCompanyDocuments();
-}
-export async function addCompanyDocument(doc) {
-  return await apiAddCompanyDocument(doc);
-}
-export async function updateDocStatus(appId, docId, status) {
-  return await apiUpdateDocStatus(appId, docId, status);
-}
-export async function signSchoolDoc(appId, docId, signerName) {
-  return await apiSignSchoolDoc(appId, docId, signerName);
-}
-
-// Messages
-export async function getMessages(appId) {
-  return await apiGetMessages(appId);
-}
-export async function sendMessage(appId, from, text) {
-  return await apiSendMessage(appId, from, text);
-}
-
-// Email Templates
-export async function getEmailTemplates() {
-  return await apiGetEmailTemplates();
-}
-export async function saveEmailTemplate(template) {
-  return await apiSaveEmailTemplate(template);
-}
-export async function deleteEmailTemplate(templateId) {
-  return await apiDeleteEmailTemplate(templateId);
-}
-
-// Analytics/Historical
-export async function getAnalytics(params = {}) {
-  return await apiGetAnalytics(params);
-}
-export async function getHistoricalRecords(params = {}) {
-  return await apiGetHistoricalRecords(params);
-}
-
-// TODO: Refactor all UI update logic to use these async functions and handle loading/errors in the UI.
 
 export function saveStore(data) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  storeCache = normalizeStore(data);
+  queuePersist();
 }
 
 export function resetStore() {
-  localStorage.removeItem(STORE_KEY);
-  return getStore();
+  storeCache = buildEmptyStore();
+  return storeCache;
 }
 
 // Auth helpers
-// Auth helpers (API-based)
-export async function loginUser(email, password, role) {
-  try {
-    const result = await apiLogin(email, password, role);
-    return result.user || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-export async function registerUser({ name, email, password, phone }) {
-  try {
-    const result = await apiRegister({ name, email, password, phone });
-    if (result.error) return { error: result.error };
-    return { user: result.user };
-  } catch (e) {
-    return { error: 'Registration failed' };
-  }
-}
-
-export function updateUser(userId, updates) {
+export function loginUser(email, password, role) {
   const data = getStore();
-  const user = data.users.find(u => u.id === userId);
-  if (user) {
-    Object.assign(user, updates);
-    saveStore(data);
-    return user;
-  }
-  return null;
+  const user = data.users.find(u => u.email === email && u.password === password);
+  if (!user) return null;
+  if (role === 'hr' && user.role !== 'hr') return null;
+  if (role === 'intern' && user.role === 'hr') return null;
+  return user;
+}
+
+export function registerUser({ name, email, password, phone }) {
+  const data = getStore();
+  if (data.users.find(u => u.email === email)) return { error: 'Email already registered' };
+  const user = { id: makeId('user'), email, password, name, phone, role: 'applicant' };
+  data.users.push(user);
+  saveStore(data);
+  return { user };
 }
 
 // Application helpers
@@ -258,41 +163,19 @@ export function getApplication(userId) {
   return data.applications.find(a => a.userId === userId);
 }
 
-
-export function deployIntern(appId) {
-  const data = getStore();
-  const app = data.applications.find(a => a.id === appId);
-  if (app) app.isDeployed = true;
-  saveStore(data);
-  return app;
-}
-
-// DTR helpers
-
-
-export function addSchoolActivity(appId, entry) {
-  const data = getStore();
-  if (!data.schoolActivities) data.schoolActivities = [];
-  const sa = { id: makeId('sa'), appId, ...entry, status: 'pending', type: 'school' };
-  data.schoolActivities.push(sa);
-  saveStore(data);
-  return sa;
-}
-
-export function getSchoolActivities(appId) {
-  const data = getStore();
-  return (data.schoolActivities || []).filter(s => s.appId === appId);
-}
-
-export function approveSchoolActivity(saId, approve) {
-  const data = getStore();
-  const sa = (data.schoolActivities || []).find(s => s.id === saId);
-  if (sa) sa.status = approve ? 'approved' : 'rejected';
-  saveStore(data);
-}
-
 // Message helpers
+export function getMessages(appId) {
+  const data = getStore();
+  return data.messages.filter(m => m.appId === appId);
+}
 
+export function sendMessage(appId, from, text) {
+  const data = getStore();
+  const msg = { id: 'msg' + Date.now(), appId, from, text, time: new Date().toLocaleString() };
+  data.messages.push(msg);
+  saveStore(data);
+  return msg;
+}
 
 export function markMessagesAsRead(appId, readByRole) {
   const data = getStore();
@@ -307,12 +190,56 @@ export function markMessagesAsRead(appId, readByRole) {
 }
 
 // Document helpers
+export function updateDocStatus(appId, docId, status) {
+  const data = getStore();
+  const app = data.applications.find(a => a.id === appId);
+  if (!app) return;
+  if (!app.companyDocs) app.companyDocs = {};
+  app.companyDocs[docId] = status;
+  saveStore(data);
+}
+
 export function addSchoolDoc(appId, doc) {
   const data = getStore();
   const app = data.applications.find(a => a.id === appId);
   if (!app) return;
   if (!app.schoolDocs) app.schoolDocs = [];
   app.schoolDocs.push({ id: makeId('sd'), ...doc, status: 'submitted', signedBy: null });
+  saveStore(data);
+}
+
+export function signSchoolDoc(appId, docId, signerName) {
+  const data = getStore();
+  const app = data.applications.find(a => a.id === appId);
+  if (!app) return;
+  const doc = (app.schoolDocs || []).find(d => d.id === docId);
+  if (doc) { doc.status = 'signed'; doc.signedBy = signerName; }
+  saveStore(data);
+}
+
+export function saveEmailTemplate(template) {
+  const data = getStore();
+  const emailTemplates = Array.isArray(data.emailTemplates) ? data.emailTemplates : [];
+  const entry = {
+    id: template.id || makeId('tmpl'),
+    name: template.name,
+    subject: template.subject,
+    body: template.body,
+  };
+  const existingIndex = emailTemplates.findIndex(t => t.id === entry.id);
+  if (existingIndex >= 0) {
+    emailTemplates[existingIndex] = entry;
+  } else {
+    emailTemplates.push(entry);
+  }
+  data.emailTemplates = emailTemplates;
+  saveStore(data);
+  return entry;
+}
+
+export function deleteEmailTemplate(templateId) {
+  const data = getStore();
+  data.emailTemplates = (data.emailTemplates || []).filter(t => t.id !== templateId);
   saveStore(data);
 }
 
@@ -364,8 +291,6 @@ export function computeHours(timeIn, timeOut) {
   return { regular, overtime, total: regular + overtime };
 }
 
-let storeCache;
-let initPromise;
 export function formatHours(h) {
   if (h === Math.floor(h)) return h.toString();
   const dec = h - Math.floor(h);
@@ -373,37 +298,15 @@ export function formatHours(h) {
   return h.toFixed(1).replace(/\.0$/, '');
 }
 
-export async function initStore() {
-  if (!initPromise) {
-    initPromise = (async () => {
-      storeCache = getStore();
-    })();
-  }
-  return initPromise;
-}
-
-function normalizeStore(data) {
-  // Ensure all required fields exist
-  if (!data.applications) data.applications = [];
-  if (!data.dtrEntries) data.dtrEntries = [];
-  if (!data.messages) data.messages = [];
-  if (!data.schoolActivities) data.schoolActivities = [];
-  return data;
-}
-
-function queuePersist() {
-  persistChain = persistChain.then(() => {
-    localStorage.setItem(STORE_KEY, JSON.stringify(storeCache));
-  });
-}
-
-function buildEmptyStore() {
-  return { ...SEED_DATA };
-}
-
 export function getDepartments() {
   const data = getStore();
   return Object.keys(data.deptSlots || {});
 }
 
-
+export function getCompanyDocuments() {
+  const data = getStore();
+  return (data.companyDocuments || []).map(doc => ({
+    ...doc,
+    desc: doc.desc || doc.description || '',
+  }));
+}

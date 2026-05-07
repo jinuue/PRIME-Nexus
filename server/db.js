@@ -9,7 +9,9 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
+const isLocalhost = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
+
 export const pool = new Pool({
   connectionString,
-  ssl: { rejectUnauthorized: false },
+  ...(isLocalhost ? {} : { ssl: { rejectUnauthorized: false } }),
 });
