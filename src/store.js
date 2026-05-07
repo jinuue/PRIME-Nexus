@@ -102,57 +102,92 @@ function generateSeedApplicants() {
   return { users, applications: apps, dtrEntries, messages };
 }
 
-export function getStore() {
-  const raw = localStorage.getItem(STORE_KEY);
-  if (raw) {
-    const data = JSON.parse(raw);
-    // Migration: ensure emailTemplates and deptSlots exist in old storage
-    if (!data.emailTemplates) data.emailTemplates = [...EMAIL_TEMPLATES];
-    if (!data.deptSlots) data.deptSlots = { ...SEED_DATA.deptSlots };
-    if (!data.companyDocuments) data.companyDocuments = [...COMPANY_DOCUMENTS];
 
-    // Migration: ensure ALL supervisor test accounts exist in old storage
-    let changed = false;
-    const seedSups = SEED_DATA.users.filter(u => u.role === 'supervisor');
-    seedSups.forEach(s => {
-      const existing = data.users.find(u => u.id === s.id);
-      if (!existing) {
-        data.users.push(s);
-        changed = true;
-      } else if (existing.name !== s.name) {
-        existing.name = s.name;
-        changed = true;
-      }
-    });
+// --- HR BACKEND INTEGRATION ---
+import {
+  apiGetApplications,
+  apiUpdateApplicationStatus,
+  apiGetUsers,
+  apiGetDtrEntries,
+  apiAddDtrEntry,
+  apiGetCompanyDocuments,
+  apiAddCompanyDocument,
+  apiUpdateDocStatus,
+  apiSignSchoolDoc,
+  apiGetMessages,
+  apiSendMessage,
+  apiGetEmailTemplates,
+  apiSaveEmailTemplate,
+  apiDeleteEmailTemplate,
+  apiGetAnalytics,
+  apiGetHistoricalRecords
+} from './api.js';
 
-    // Clean up old sup1 and sup2 if they still exist to avoid duplicates
-    const oldSup1 = data.users.findIndex(u => u.id === 'sup1');
-    if (oldSup1 > -1) { data.users.splice(oldSup1, 1); changed = true; }
-    const oldSup2 = data.users.findIndex(u => u.id === 'sup2');
-    if (oldSup2 > -1) { data.users.splice(oldSup2, 1); changed = true; }
+// Remove getStore/saveStore for HR data. All data must come from backend APIs.
 
-    const app1 = data.applications.find(a => a.id === 'app1');
-    if (app1 && (app1.supervisor === 'Supervisor Jonel Belandres' || app1.supervisor === 'Engr. Carlos Reyes')) {
-      app1.supervisor = 'Jonel Belandres';
-      changed = true;
-    }
-    
-    if (changed) localStorage.setItem(STORE_KEY, JSON.stringify(data));
-
-    return data;
-  }
-  const seed = generateSeedApplicants();
-  const data = {
-    ...SEED_DATA,
-    users: [...SEED_DATA.users, ...seed.users],
-    applications: seed.applications,
-    dtrEntries: seed.dtrEntries,
-    schoolActivities: [],
-    messages: seed.messages,
-  };
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
-  return data;
+// Applications
+export async function getApplications(params = {}) {
+  return await apiGetApplications(params);
 }
+export async function updateAppStatus(appId, status, extra = {}) {
+  return await apiUpdateApplicationStatus(appId, status, extra);
+}
+
+// Users
+export async function getUsers(params = {}) {
+  return await apiGetUsers(params);
+}
+
+// DTR
+export async function getDtrEntries(appId) {
+  return await apiGetDtrEntries(appId);
+}
+export async function addDtrEntry(appId, entry) {
+  return await apiAddDtrEntry(appId, entry);
+}
+
+// Documents
+export async function getCompanyDocuments() {
+  return await apiGetCompanyDocuments();
+}
+export async function addCompanyDocument(doc) {
+  return await apiAddCompanyDocument(doc);
+}
+export async function updateDocStatus(appId, docId, status) {
+  return await apiUpdateDocStatus(appId, docId, status);
+}
+export async function signSchoolDoc(appId, docId, signerName) {
+  return await apiSignSchoolDoc(appId, docId, signerName);
+}
+
+// Messages
+export async function getMessages(appId) {
+  return await apiGetMessages(appId);
+}
+export async function sendMessage(appId, from, text) {
+  return await apiSendMessage(appId, from, text);
+}
+
+// Email Templates
+export async function getEmailTemplates() {
+  return await apiGetEmailTemplates();
+}
+export async function saveEmailTemplate(template) {
+  return await apiSaveEmailTemplate(template);
+}
+export async function deleteEmailTemplate(templateId) {
+  return await apiDeleteEmailTemplate(templateId);
+}
+
+// Analytics/Historical
+export async function getAnalytics(params = {}) {
+  return await apiGetAnalytics(params);
+}
+export async function getHistoricalRecords(params = {}) {
+  return await apiGetHistoricalRecords(params);
+}
+
+// TODO: Refactor all UI update logic to use these async functions and handle loading/errors in the UI.
 
 export function saveStore(data) {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
