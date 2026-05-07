@@ -306,13 +306,6 @@ export function markMessagesAsRead(appId, readByRole) {
 
 // Document helpers
 export function updateDocStatus(appId, docId, status) {
-  const data = getStore();
-  const app = data.applications.find(a => a.id === appId);
-  if (!app) return;
-  if (!app.companyDocs) app.companyDocs = {};
-  app.companyDocs[docId] = status;
-  saveStore(data);
-}
 
 export function addSchoolDoc(appId, doc) {
   const data = getStore();
@@ -324,39 +317,10 @@ export function addSchoolDoc(appId, doc) {
 }
 
 export function signSchoolDoc(appId, docId, signerName) {
-  const data = getStore();
-  const app = data.applications.find(a => a.id === appId);
-  if (!app) return;
-  const doc = (app.schoolDocs || []).find(d => d.id === docId);
-  if (doc) { doc.status = 'signed'; doc.signedBy = signerName; }
-  saveStore(data);
-}
 
 export function saveEmailTemplate(template) {
-  const data = getStore();
-  const emailTemplates = Array.isArray(data.emailTemplates) ? data.emailTemplates : [];
-  const entry = {
-    id: template.id || makeId('tmpl'),
-    name: template.name,
-    subject: template.subject,
-    body: template.body,
-  };
-  const existingIndex = emailTemplates.findIndex(t => t.id === entry.id);
-  if (existingIndex >= 0) {
-    emailTemplates[existingIndex] = entry;
-  } else {
-    emailTemplates.push(entry);
-  }
-  data.emailTemplates = emailTemplates;
-  saveStore(data);
-  return entry;
-}
 
 export function deleteEmailTemplate(templateId) {
-  const data = getStore();
-  data.emailTemplates = (data.emailTemplates || []).filter(t => t.id !== templateId);
-  saveStore(data);
-}
 
 // Utility
 export function getQuarter(date) {
