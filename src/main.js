@@ -21,30 +21,49 @@ function toggleTheme() {
 }
 
 // App State
+
 const storeReady = (async () => {
   await initStore();
   initTheme();
   const restoredUser = sessionStorage.getItem('prime_user');
   if (restoredUser) {
-    window.APP.user = JSON.parse(restoredUser);
+    try {
+      const parsed = JSON.parse(restoredUser);
+      // Fetch latest user from backend
+      const userRes = await apiGetUser(parsed.id);
+      window.APP.user = userRes.user;
+    } catch {
+      window.APP.user = null;
+    }
   }
 })();
+
 
 window.APP = {
   user: null,
   navigate(hash) { window.location.hash = hash; },
-  login(user) {
-    this.user = user;
+  async login(user) {
+    // Save user to sessionStorage
     sessionStorage.setItem('prime_user', JSON.stringify(user));
-    const app = getApplication(user.id);
-    if (user.role === 'hr') this.navigate('#hr');
-    else if (user.role === 'supervisor') this.navigate('#supervisor');
-    else if (user.role === 'intern' || (app && app.status === 'accepted')) this.navigate('#status');
-    else if (app) this.navigate('#status');
+    // Fetch latest user and application from backend
+    try {
+      const userRes = await apiGetUser(user.id);
+      this.user = userRes.user;
+      const appRes = await apiGetApplication(user.id);
+      this.application = appRes.application;
+    } catch {
+      this.user = user;
+      this.application = null;
+    }
+    if (this.user.role === 'hr') this.navigate('#hr');
+    else if (this.user.role === 'supervisor') this.navigate('#supervisor');
+    else if (this.user.role === 'intern' || (this.application && this.application.status === 'accepted')) this.navigate('#status');
+    else if (this.application) this.navigate('#status');
     else this.navigate('#apply');
   },
   async logout() {
     this.user = null;
+    this.application = null;
     sessionStorage.removeItem('prime_user');
     this.navigate('#landing');
   },
@@ -65,15 +84,7 @@ async function route() {
     return;
   }
 
-  // Refresh user data from store
-  if (window.APP.user) {
-    const store = getStore();
-    const freshUser = store.users.find(u => u.id === window.APP.user.id);
-    if (freshUser) {
-      window.APP.user = freshUser;
-      sessionStorage.setItem('prime_user', JSON.stringify(freshUser));
-    }
-  }
+  // Refresh user data from backend (optional: can be enhanced for live updates)
 
   try {
     switch (hash) {
