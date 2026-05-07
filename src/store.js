@@ -1,3 +1,4 @@
+import { apiLogin, apiRegister } from './api.js';
 // Local API driven store
 
 
@@ -163,23 +164,24 @@ export function resetStore() {
 }
 
 // Auth helpers
-export function loginUser(email, password, role) {
-  const data = getStore();
-  const user = data.users.find(u => u.email === email && u.password === password);
-  if (!user) return null;
-  if (role === 'hr' && user.role !== 'hr') return null;
-  if (role === 'supervisor' && user.role !== 'supervisor') return null;
-  if (role === 'intern' && (user.role === 'hr' || user.role === 'supervisor')) return null;
-  return user;
+// Auth helpers (API-based)
+export async function loginUser(email, password, role) {
+  try {
+    const result = await apiLogin(email, password, role);
+    return result.user || null;
+  } catch (e) {
+    return null;
+  }
 }
 
-export function registerUser({ name, email, password, phone }) {
-  const data = getStore();
-  if (data.users.find(u => u.email === email)) return { error: 'Email already registered' };
-  const user = { id: makeId('user'), email, password, name, phone, role: 'applicant' };
-  data.users.push(user);
-  saveStore(data);
-  return { user };
+export async function registerUser({ name, email, password, phone }) {
+  try {
+    const result = await apiRegister({ name, email, password, phone });
+    if (result.error) return { error: result.error };
+    return { user: result.user };
+  } catch (e) {
+    return { error: 'Registration failed' };
+  }
 }
 
 // Application helpers
