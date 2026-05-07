@@ -1,10 +1,4 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { pool } from './db.js';
 
-const app = express();
-app.use(express.json({ limit: '2mb' }));
 
 // --- School Activities ---
 // Get all school activities for an application
@@ -213,6 +207,7 @@ app.post('/api/dtr', async (req, res) => {
     client.release();
   }
 });
+
 // Get user by ID
 app.get('/api/user/:id', async (req, res) => {
   const { id } = req.params;
@@ -236,15 +231,6 @@ app.get('/api/user/:id', async (req, res) => {
     client.release();
   }
 });
-
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { pool } from './db.js';
-
-
-const app = express();
-app.use(express.json({ limit: '2mb' }));
 
 // Serve static files from the frontend build (dist)
 const __filename = fileURLToPath(import.meta.url);
