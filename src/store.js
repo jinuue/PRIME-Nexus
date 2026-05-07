@@ -305,8 +305,6 @@ export function markMessagesAsRead(appId, readByRole) {
 }
 
 // Document helpers
-export function updateDocStatus(appId, docId, status) {
-
 export function addSchoolDoc(appId, doc) {
   const data = getStore();
   const app = data.applications.find(a => a.id === appId);
@@ -315,12 +313,6 @@ export function addSchoolDoc(appId, doc) {
   app.schoolDocs.push({ id: makeId('sd'), ...doc, status: 'submitted', signedBy: null });
   saveStore(data);
 }
-
-export function signSchoolDoc(appId, docId, signerName) {
-
-export function saveEmailTemplate(template) {
-
-export function deleteEmailTemplate(templateId) {
 
 // Utility
 export function getQuarter(date) {
