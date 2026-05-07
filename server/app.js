@@ -1,4 +1,12 @@
-import express from 'express'; // or: const express = require('express');
+
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { pool } from './db.js';
+
+const app = express();
+app.use(express.json());
+
 
 // --- School Activities ---
 // Get all school activities for an application
