@@ -14,6 +14,9 @@ export function renderLanding(container) {
         <button class="btn btn-landing-secondary" onclick="location.hash='#login-hr'" id="btn-hr-portal">
           🔐 HR Administration
         </button>
+        <button class="btn btn-landing-secondary" onclick="location.hash='#login-supervisor'" id="btn-supervisor-portal">
+          🧑‍💼 Supervisor Portal
+        </button>
       </div>
 
       <div class="scroll-hint" style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.6); font-size: 0.85rem; animation: bounce 2s infinite; cursor: pointer; z-index: 10;" id="scroll-to-team">
